@@ -1,6 +1,7 @@
-pytest
-pytest-pep8
-Sphinx
-numpy
-matplotlib
-scipy
+dnspython
+pymodm
+datetime
+flask
+pymongo
+flask-pymongo
+requests
