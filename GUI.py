@@ -68,15 +68,16 @@ def second_screen(username, newwin1):
 
 
 def process_image(process_method, im_display, username):
-    processing_type = []
     if process_method.get() == 1:
         processing_type = 'do hist eq'
-    if process_method.get() == 2:
+    elif process_method.get() == 2:
         processing_type = 'do con stretch'
-    if process_method.get() == 3:
+    elif process_method.get() == 3:
         processing_type = 'do log comp'
-    if process_method.get() == 4:
+    elif process_method.get() == 4:
         processing_type = 'do reverse vid'
+    else:
+        processing_type = 'do hist eq'
 
     if im_display.get() == 1:
         imagedisplay = 'do image display'
