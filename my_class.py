@@ -6,7 +6,7 @@ class User(MongoModel):
     file_name = fields.ListField()
     original_image = fields.ImageField()
     processing_type = fields.ListField()
-    image_display= fields.CharField()
+    image_display = fields.CharField()
     processed_image = fields.CharField()
     time_uploaded = fields.CharField()
     time_to_process = fields.CharField()
