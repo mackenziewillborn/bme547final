@@ -20,12 +20,27 @@ def add_user_name(user_name_arg):
     u.save()
 
 
+def add_processing_type(user_name_arg, processing_type_arg):
+    u = User(user_name=user_name_arg,
+             processing_type=processing_type_arg)
+    u.save()
+
+
 @app.route("/user_name", methods=["POST"])
 def user_name():
     r = request.get_json()
     user_name = r["user_name"]
     add_user_name(user_name)
     return "Added user name!"
+
+
+@app.route("/processing_type", methods=["POST"])
+def processing_type():
+    r = request.get_json()
+    user_name = r["user_name"]
+    processing_type = r["processing_type"]
+    add_processing_type(user_name, processing_type)
+    return "Added user's image processing type preference!"
 
 
 if __name__ == '__main__':
