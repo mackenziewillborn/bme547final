@@ -12,7 +12,7 @@ from skimage import exposure
 from skimage import util
 
 from flask_pymongo import PyMongo
-from flask import Flask, request
+from flask import Flask, request, jsonify, abort
 from my_class import User
 from pymodm import connect
 
@@ -28,9 +28,32 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
 mongo = PyMongo(app)
 
 
+@app.route("/user_name", methods=["POST"])
+def user_name():
+    r = request.get_json()
+    user_name = r["user_name"]
+    # add_user_name(user_name)
+    return "Added user name!"
+
+
 def add_user_name(user_name_arg):
     u = User(user_name=user_name_arg)
     u.save()
+
+
+@app.route("/processing_type", methods=["POST"])
+def processing_type():
+    r = request.get_json()
+    user_name = r["user_name"]
+    raw_b64_string = r["raw_b64_string"]
+    processing_type = r["processing_type"]
+
+    # add_processing_type(user_name, processing_type)
+    img_io = image_decode(user_name, processing_type, raw_b64_string)
+    img_proc = image_processing(img_io, processing_type)
+    # processed_image(user_name, img_proc)
+    processed_image(img_proc)
+    return "Added user's image processing type preference!"
 
 
 def add_processing_type(user_name_arg, processing_type_arg):
@@ -39,16 +62,17 @@ def add_processing_type(user_name_arg, processing_type_arg):
     u.save()
 
 
-def image_decode(user_name_arg, raw_b64_string):
+def image_decode(user_name_arg, processing_type_arg, raw_b64_string):
     image_bytes = base64.b64decode(raw_b64_string)
     img_io = imread(io.BytesIO(image_bytes))
     plt.imsave('raw_test.jpg', img_io)
-    with open('new-img.jpg', 'wb') as raw_img:
-        raw_img.write(image_bytes)
+    # with open('new-img.jpg', 'wb') as raw_img:
+    #     raw_img.write(image_bytes)
     # u = User(user_name=user_name_arg,
-    #              original_image=raw_img)
+    #          processing_type=processing_type_arg,
+    #          original_image=raw_b64_string)
     # u.save()
-    return img_io, raw_img
+    return img_io
 
 
 def image_processing(img_io, processing_type):
@@ -88,36 +112,32 @@ def reverse_video(img):
     return img_inv
 
 
-@app.route("/user_name", methods=["POST"])
-def user_name():
-    r = request.get_json()
-    user_name = r["user_name"]
-    add_user_name(user_name)
-    return "Added user name!"
-
-
-@app.route("/processing_type", methods=["POST"])
-def processing_type():
-    r = request.get_json()
-    user_name = r["user_name"]
-    raw_b64_string = r["raw_b64_string"]
-    processing_type = r["processing_type"]
-
-    add_processing_type(user_name, processing_type)
-    img_io, raw_img = image_decode(user_name, raw_b64_string)
-    img_proc = image_processing(img_io, processing_type)
-    processed_image(img_proc)
-    return "Added user's image processing type preference!"
-
-
+@app.route("/processed_image", methods=["GET"])
 def processed_image(img_proc):
-    proc_img_bytes = img_proc.tobytes()
-    proc_b64_bytes = base64.b64encode(proc_img_bytes)
-    proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
+    proc_b64_string = add_processed_image(img_proc)
+#     u = User(user_name=user_name_arg,
+#              processed_image=proc_b64_string)
+#     u.save()
     image_output = {"processed_image": proc_b64_string
                     }
-    # return jsonify(image_output)
+    return jsonify(image_output)
 
+
+def add_processed_image(img_proc):
+    proc_img_bytes = img_proc.tobytes()
+    proc_b64_bytes = base64.b64encode(proc_img_bytes)
+    # buff = BytesIO()
+    # pil_img.save(buff, format="JPEG")
+    # proc_b64_string = base64.b64encode(buff.getvalue()).decode("utf-8")
+    # with open(proc_img_jpg, "rb") as proc_image_file:
+    #     proc_b64_bytes = base64.b64encode(proc_image_file.read())
+    proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
+    return proc_b64_string
+
+    # After the image is processed, I am going to save the processed image
+    # into the database, encode the processed image
+    # back to a base64 string, send it to the GUI as a GET request, and the
+    # GUI will decode the string and display the processed image
 
 if __name__ == '__main__':
     app.run()
