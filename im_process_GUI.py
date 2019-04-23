@@ -1,3 +1,4 @@
+import base64
 from tkinter import *
 from tkinter import ttk
 # from tkinter.filedialog import askopenfilename
@@ -99,6 +100,9 @@ def cont_function(username, first_frame):
 
 
 def process_image(username, process_method, second_frame):
+    with open(raw_filenames[0], "rb") as raw_image_file:
+        raw_b64_bytes = base64.b64encode(raw_image_file.read())
+    raw_b64_string = str(raw_b64_bytes, encoding='utf-8')
     # figure out how to set hist eq as default
     if process_method.get() == 1:
         processing_type = 'hist_eq'
@@ -112,6 +116,7 @@ def process_image(username, process_method, second_frame):
         processing_type = 'hist_eq'
 
     user_processing_type = {"user_name": username.get(),
+                            "raw_b64_string": raw_b64_string,
                             "processing_type": processing_type}
     requests.post(URL+'/processing_type', json=user_processing_type)
     return

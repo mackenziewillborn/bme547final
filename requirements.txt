@@ -12,3 +12,5 @@ dnspython
 flask
 pymongo
 flask-pymongo
+cython
+imageio
