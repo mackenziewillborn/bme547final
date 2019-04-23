@@ -4,3 +4,13 @@ Sphinx
 numpy
 matplotlib
 scipy
+Pillow
+requests
+scikit-image
+pymodm
+dnspython
+flask
+pymongo
+flask-pymongo
+cython
+imageio
