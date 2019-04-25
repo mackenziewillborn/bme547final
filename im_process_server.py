@@ -15,6 +15,7 @@ from flask_pymongo import PyMongo
 from flask import Flask, request
 from my_class import User
 from pymodm import connect
+import datetime
 
 app = Flask(__name__)
 
@@ -28,14 +29,20 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
 mongo = PyMongo(app)
 
 
-def add_user_name(user_name_arg):
-    u = User(user_name=user_name_arg)
+def upload_time():
+    time = datetime.datetime.now()
+    return time
+
+
+def add_user_name(user_name_arg, time):
+    u = User(user_name=user_name_arg,
+             time_uploaded=time)
     u.save()
 
 
 def add_processing_type(user_name_arg, processing_type_arg):
-    u = User(user_name=user_name_arg,
-             processing_type=processing_type_arg)
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.processing_type = processing_type_arg
     u.save()
 
 
@@ -45,9 +52,9 @@ def image_decode(user_name_arg, raw_b64_string):
     plt.imsave('raw_test.jpg', img_io)
     with open('new-img.jpg', 'wb') as raw_img:
         raw_img.write(image_bytes)
-    # u = User(user_name=user_name_arg,
-    #              original_image=raw_img)
-    # u.save()
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.original_image = raw_b64_string
+    u.save()
     return img_io, raw_img
 
 
