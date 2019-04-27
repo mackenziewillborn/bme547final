@@ -6,12 +6,12 @@ from PIL import ImageTk, Image
 from tkinter import filedialog
 import requests
 from pymodm import connect
+import cv2
 
 root = Tk()  # makes main window
 root.title("GUI Client")
 main_frame = Frame(root)
 main_frame.pack()
-raw_filepath = "/Users/kelseyli/Repos/bme547final/osa_lifecycle.png"
 URL = "http://127.0.0.1:5000"
 
 
@@ -81,12 +81,69 @@ def second_screen(username, first_frame):
     return second_frame
 
 
+def third_screen(username, second_frame):
+    second_frame.destroy()
+    third_frame = Frame(root)
+    third_frame.pack()
+
+    r = requests.get(URL+'/time_uploaded/'+username.get())
+    r_json = r.json()
+    print(r_json)
+    time_uploaded = r_json['time_uploaded']
+    print(time_uploaded)
+    ttk.Label(third_frame, text="Time Uploaded: {}".
+              format(time_uploaded)).grid(column=0,
+                                          row=0, columnspan=2, sticky=W)
+    process_time = r_json['process_time']
+    ttk.Label(third_frame, text="Time to Process: {}".
+              format(process_time)).grid(column=0,
+                                         row=1, columnspan=2, sticky=W)
+
+    im_size = cv2.imread(raw_filenames[0], cv2.IMREAD_UNCHANGED)
+    height = im_size.shape[0]
+    width = im_size.shape[1]
+    ttk.Label(third_frame, text="Image Size: {} x {} pixels".
+              format(width, height)).grid(column=0, row=2,
+                                          columnspan=2, sticky=W)
+
+    ok_btn = ttk.Button(third_frame,
+                        text='Raw vs. Processed Images',
+                        command=lambda: image_window())
+    ok_btn.grid(column=0, row=3)
+
+    image_download = ttk.Label(third_frame,
+                               text="Download processed image as:")
+    image_download.grid(column=3, row=0,
+                        rowspan=2, columnspan=2, sticky=W)
+
+    image_format = StringVar()
+    ttk.Radiobutton(third_frame, text='JPEG',
+                    variable=image_format,
+                    value='JPEG').grid(column=3, row=2, sticky=W)
+    ttk.Radiobutton(third_frame,
+                    text='PNG', variable=image_format,
+                    value='PNG').grid(column=3, row=3, sticky=W)
+    ttk.Radiobutton(third_frame,
+                    text='TIFF', variable=image_format,
+                    value='TIFF').grid(column=3, row=4, sticky=W)
+
+    ok_btn = ttk.Button(third_frame, text='Download',
+                        command=download_function)
+    ok_btn.grid(column=4, row=6)
+    reprocess_btn = ttk.Button(third_frame,
+                               text='Apply another Processing Method',
+                               command=lambda:
+                               reprocess_function(username, third_frame))
+    reprocess_btn.grid(column=3, row=6)
+    root.mainloop()  # shows window
+    return third_frame
+
+
 def browse_function():
     global raw_filenames
     root.filename = \
-        filedialog.askopenfilenames(initialdir="/", title="Select file",
-                                    filetypes=(("png files", "*.png"),
-                                               ("all files", "*.*"),))
+        filedialog.askopenfilenames(initialdir="/", title="Select Image"
+                                    )
     raw_filenames = root.filename
     print(raw_filenames[0])
 
@@ -119,8 +176,68 @@ def process_image(username, process_method, second_frame):
                             "raw_b64_string": raw_b64_string,
                             "processing_type": processing_type}
     requests.post(URL+'/processing_type', json=user_processing_type)
+    third_screen(username, second_frame)
     return
 
+
+def image_window():
+    image_win = Toplevel(root)
+
+    raw_open = Image.open(raw_filenames[0])
+    raw_image = ImageTk.PhotoImage(raw_open)
+
+    proc_open = Image.open("/Users/Connor/downloads/101_ObjectCategories/" +
+                           "starfish/image_0069.jpg")
+    # change eventually to processed image
+    proc_image = ImageTk.PhotoImage(proc_open)
+
+    panel1 = Label(image_win, image=raw_image)
+    panel1.grid(row=0, column=0)
+    panel1 = Label(image_win, text="Raw Image")
+    panel1.grid(row=1, column=0)
+
+    panel2 = Label(image_win, image=proc_image)
+    panel2.grid(row=0, column=1)
+    panel1 = Label(image_win, text="Processed Image")
+    panel1.grid(row=1, column=1)
+    root.mainloop()
+
+
+def download_function():
+    print('download')
+
+
+def reprocess_function(username, third_frame):
+    # can change this
+    # takes you back to the first screen
+    third_frame.destroy()
+    reprocess_frame = Frame(root)
+    reprocess_frame.pack()
+
+    top_label = ttk.Label(reprocess_frame,
+                          text="Select next image processing step:",
+                          font=("Helvetica", 20))
+    top_label.grid(column=0, row=0)
+
+    process_method = IntVar()
+    ttk.Radiobutton(reprocess_frame, text="Histogram Equalization",
+                    variable=process_method,
+                    value=1).grid(column=0, row=1, sticky=W)
+    ttk.Radiobutton(reprocess_frame, text="Contrast Stretching",
+                    variable=process_method,
+                    value=2).grid(column=0, row=2, sticky=W)
+    ttk.Radiobutton(reprocess_frame, text="Log Compression",
+                    variable=process_method,
+                    value=3).grid(column=0, row=3, sticky=W)
+    ttk.Radiobutton(reprocess_frame, text="Reverse Video",
+                    variable=process_method,
+                    value=4).grid(column=0, row=4, sticky=W)
+
+    ok_btn = ttk.Button(reprocess_frame, text='Continue',
+                        command=lambda:
+                        process_image(username, process_method,
+                                      reprocess_frame))
+    ok_btn.grid(column=0, row=7)
 
 if __name__ == '__main__':
     main()
