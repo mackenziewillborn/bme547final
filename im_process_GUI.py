@@ -1,3 +1,9 @@
+from tkinter import *
+from tkinter import ttk
+# from tkinter.filedialog import askopenfilename
+from PIL import ImageTk, Image
+from tkinter import filedialog
+import requests
 import base64
 from tkinter import *
 from tkinter import ttk
@@ -13,6 +19,8 @@ main_frame = Frame(root)
 main_frame.pack()
 raw_filepath = "/Users/kelseyli/Repos/bme547final/osa_lifecycle.png"
 URL = "http://127.0.0.1:5000"
+
+raw_filenames = ()
 
 
 def main():
@@ -88,14 +96,17 @@ def browse_function():
                                     filetypes=(("png files", "*.png"),
                                                ("all files", "*.*"),))
     raw_filenames = root.filename
-    print(raw_filenames[0])
 
 
 def cont_function(username, first_frame):
+    global raw_filenames
+    print(raw_filenames)
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
     second_screen(username, first_frame)
+    if len(raw_filenames) == 0:
+        raise KeyError("The required Key was not entered.")
     pass
 
 
