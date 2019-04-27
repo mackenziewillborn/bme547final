@@ -1,6 +1,0 @@
-pytest
-pytest-pep8
-Sphinx
-numpy
-matplotlib
-scipy
