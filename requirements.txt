@@ -15,3 +15,4 @@ flask-pymongo
 cython
 imageio
 datetime
+opencv-python
