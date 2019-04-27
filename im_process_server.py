@@ -1,5 +1,6 @@
 import base64
 import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import io
@@ -11,10 +12,11 @@ from skimage import data, img_as_float
 from skimage import exposure
 from skimage import util
 
+import logging
 from flask_pymongo import PyMongo
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from my_class import User
-from pymodm import connect
+from pymodm import connect, errors
 import datetime
 
 app = Flask(__name__)
@@ -27,6 +29,9 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
                           "mongodb.net/test?retryWrites=true"
 
 mongo = PyMongo(app)
+
+
+Error = {1: {"message": "The required Key was not entered."}}
 
 
 def upload_time():
@@ -109,13 +114,23 @@ def user_name():
     r = request.get_json()
     user_name = r["user_name"]
     time = upload_time()
-    add_user_name(user_name, time)
+
+    try:
+        add_user_name(user_name, time)
+    except errors.ValidationError:
+        logging.warning(Error[1])
+        return jsonify(Error[1]), 500
+    except KeyError:
+        logging.warning(Error[1])
+        return jsonify(Error[1]), 500
+
     return "Added user name!"
 
 
 @app.route("/processing_type", methods=["POST"])
 def processing_type():
     r = request.get_json()
+
     user_name = r["user_name"]
     raw_b64_string = r["raw_b64_string"]
     processing_type = r["processing_type"]
@@ -159,6 +174,7 @@ def send_proc_image(proc_b64_string):
     image_output = {"processed_image": proc_b64_string
                     }
     return jsonify(image_output)
+
 
 if __name__ == '__main__':
     app.run()
