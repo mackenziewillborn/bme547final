@@ -135,7 +135,6 @@ def third_screen(username, second_frame):
                                command=lambda:
                                reprocess_function(username, third_frame))
     reprocess_btn.grid(column=3, row=6)
-
     root.mainloop()  # shows window
     return third_frame
 
@@ -240,6 +239,6 @@ def reprocess_function(username, third_frame):
                                       reprocess_frame))
     ok_btn.grid(column=0, row=7)
 
-
+  
 if __name__ == '__main__':
     main()
