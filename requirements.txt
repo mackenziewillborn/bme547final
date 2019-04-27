@@ -16,3 +16,4 @@ cython
 imageio
 opencv-python
 datetime
+opencv-python

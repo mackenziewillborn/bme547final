@@ -12,7 +12,7 @@ from skimage import exposure
 from skimage import util
 
 from flask_pymongo import PyMongo
-from flask import Flask, request
+from flask import Flask, request, jsonify, abort
 from my_class import User
 from pymodm import connect
 import datetime
@@ -133,11 +133,14 @@ def processing_type():
     return "Added user's image processing type preference!"
 
 
-@app.route("/processed_image", methods=["POST"])
-def post_upload_time():
+@app.route("/time_uploaded/<username>", methods=["GET"])
+def get_time_stamp(username):
     for user in User.objects.raw({}):
-        print(user.user_name)
-    return
+        if user.user_name == username:
+            print(user.user_name)
+            time_stamp = {"time_uploaded": user.time_uploaded,
+                          "process_time": user.time_to_process}
+            return jsonify(time_stamp)
 
 
 def processed_image(user_name, img_proc):
@@ -159,6 +162,7 @@ def send_proc_image(proc_b64_string):
     image_output = {"processed_image": proc_b64_string
                     }
     return jsonify(image_output)
+
 
 if __name__ == '__main__':
     app.run()
