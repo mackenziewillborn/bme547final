@@ -239,6 +239,5 @@ def reprocess_function(username, third_frame):
                                       reprocess_frame))
     ok_btn.grid(column=0, row=7)
 
-  
 if __name__ == '__main__':
     main()
