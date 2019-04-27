@@ -29,6 +29,15 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
 mongo = PyMongo(app)
 
 
+@app.route("/user_name", methods=["POST"])
+def user_name():
+    r = request.get_json()
+    user_name = r["user_name"]
+    time = upload_time()
+    add_user_name(user_name, time)
+    return "Added user name!"
+
+
 def upload_time():
     time = datetime.datetime.now()
     return time
@@ -40,15 +49,29 @@ def add_user_name(user_name_arg, time):
     u.save()
 
 
+@app.route("/processing_type", methods=["POST"])
+def processing_type():
+    r = request.get_json()
+    user_name = r["user_name"]
+    raw_b64_string = r["raw_b64_string"]
+    processing_type = r["processing_type"]
+
+    add_processing_type(user_name, processing_type)
+    time1 = datetime.datetime.now()
+    img_io = image_decode(user_name, raw_b64_string)
+    add_raw_image(user_name, raw_b64_string)
+    img_proc = image_processing(img_io, processing_type)
+    proc_b64_string = processed_image(user_name, img_proc)
+    time2 = datetime.datetime.now()
+    time_to_process = time2 - time1
+    add_time_to_process(time_to_process, user_name)
+
+    return "Added user's image processing type preference!"
+
+
 def add_processing_type(user_name_arg, processing_type_arg):
     u = User.objects.raw({"_id": user_name_arg}).first()
     u.processing_type = processing_type_arg
-    u.save()
-
-
-def add_time_to_process(time_to_process_arg, user_name_arg):
-    u = User.objects.raw({"_id": user_name_arg}).first()
-    u.time_to_process = time_to_process_arg
     u.save()
 
 
@@ -68,7 +91,7 @@ def add_raw_image(user_name_arg, raw_b64_string):
 
 
 def image_processing(img_io, processing_type):
-    img = np.asarray(img_io)
+    img = np.asarray(img_io.astype('uint8'))
     if processing_type == 'hist_eq':
         img_proc = hist_equalization(img)
     elif processing_type == 'con_stretch':
@@ -77,8 +100,8 @@ def image_processing(img_io, processing_type):
         img_proc = log_compression(img)
     elif processing_type == 'reverse_vid':
         img_proc = reverse_video(img)
-    else:
-        img_proc = hist_equalization(img)
+    # else:
+    #     img_proc = hist_equalization(img)
     plt.imsave('proc_test.jpg', img_proc)
     return img_proc
 
@@ -104,49 +127,15 @@ def reverse_video(img):
     return img_inv
 
 
-@app.route("/user_name", methods=["POST"])
-def user_name():
-    r = request.get_json()
-    user_name = r["user_name"]
-    time = upload_time()
-    add_user_name(user_name, time)
-    return "Added user name!"
-
-
-@app.route("/processing_type", methods=["POST"])
-def processing_type():
-    r = request.get_json()
-    user_name = r["user_name"]
-    raw_b64_string = r["raw_b64_string"]
-    processing_type = r["processing_type"]
-
-    add_processing_type(user_name, processing_type)
-    time1 = datetime.datetime.now()
-    img_io = image_decode(user_name, raw_b64_string)
-    add_raw_image(user_name, raw_b64_string)
-    img_proc = image_processing(img_io, processing_type)
-    proc_b64_string = processed_image(user_name, img_proc)
-    time2 = datetime.datetime.now()
-    time_to_process = time2 - time1
-    add_time_to_process(time_to_process, user_name)
-
-    return "Added user's image processing type preference!"
-
-
-@app.route("/time_uploaded/<username>", methods=["GET"])
-def get_time_stamp(username):
-    for user in User.objects.raw({}):
-        if user.user_name == username:
-            print(user.user_name)
-            time_stamp = {"time_uploaded": user.time_uploaded,
-                          "process_time": user.time_to_process}
-            return jsonify(time_stamp)
-
-
 def processed_image(user_name, img_proc):
-    proc_img_bytes = img_proc.tobytes()
-    proc_b64_bytes = base64.b64encode(proc_img_bytes)
-    proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
+    # proc_img_bytes = img_proc.tobytes()
+    # proc_b64_bytes = base64.b64encode(proc_img_bytes)
+    pil_img = Image.fromarray(img_proc.astype('uint8'))
+    buff = io.BytesIO()
+    pil_img.save(buff, format="JPEG")
+    proc_b64_string = base64.b64encode(buff.getvalue()).decode("utf-8")
+
+    # proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
     add_proc_image(user_name, proc_b64_string)
     return proc_b64_string
 
@@ -157,12 +146,28 @@ def add_proc_image(user_name_arg, proc_b64_string):
     u.save()
 
 
-@app.route("/processed_image", methods=["GET"])
-def send_proc_image(proc_b64_string):
-    image_output = {"processed_image": proc_b64_string
-                    }
-    return jsonify(image_output)
+def add_time_to_process(time_to_process_arg, user_name_arg):
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.time_to_process = time_to_process_arg
+    u.save()
 
+
+@app.route("/time_metadata/<username>", methods=["GET"])
+def get_time_stamp(username):
+    for user in User.objects.raw({}):
+        if user.user_name == username:
+            time_stamp = {"time_uploaded": user.time_uploaded,
+                          "process_time": user.time_to_process}
+            return jsonify(time_stamp)
+
+
+@app.route("/processed_image/<username>", methods=["GET"])
+def get_proc_image(username):
+    for user in User.objects.raw({}):
+        if user.user_name == username:
+            image_output = {"processed_image": user.processed_image
+                            }
+            return jsonify(image_output)
 
 if __name__ == '__main__':
     app.run()
