@@ -15,6 +15,7 @@ from flask_pymongo import PyMongo
 from flask import Flask, request
 from my_class import User
 from pymodm import connect
+import datetime
 
 app = Flask(__name__)
 
@@ -28,14 +29,26 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
 mongo = PyMongo(app)
 
 
-def add_user_name(user_name_arg):
-    u = User(user_name=user_name_arg)
+def upload_time():
+    time = datetime.datetime.now()
+    return time
+
+
+def add_user_name(user_name_arg, time):
+    u = User(user_name=user_name_arg,
+             time_uploaded=time)
     u.save()
 
 
 def add_processing_type(user_name_arg, processing_type_arg):
-    u = User(user_name=user_name_arg,
-             processing_type=processing_type_arg)
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.processing_type = processing_type_arg
+    u.save()
+
+
+def add_time_to_process(time_to_process_arg, user_name_arg):
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.time_to_process = time_to_process_arg
     u.save()
 
 
@@ -43,12 +56,15 @@ def image_decode(user_name_arg, raw_b64_string):
     image_bytes = base64.b64decode(raw_b64_string)
     img_io = imread(io.BytesIO(image_bytes))
     plt.imsave('raw_test.jpg', img_io)
-    with open('new-img.jpg', 'wb') as raw_img:
-        raw_img.write(image_bytes)
-    # u = User(user_name=user_name_arg,
-    #              original_image=raw_img)
-    # u.save()
-    return img_io, raw_img
+    # with open('new-img.jpg', 'wb') as raw_img:
+    #     raw_img.write(image_bytes)
+    return img_io
+
+
+def add_raw_image(user_name_arg, raw_b64_string):
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.original_image = raw_b64_string
+    u.save()
 
 
 def image_processing(img_io, processing_type):
@@ -92,7 +108,8 @@ def reverse_video(img):
 def user_name():
     r = request.get_json()
     user_name = r["user_name"]
-    add_user_name(user_name)
+    time = upload_time()
+    add_user_name(user_name, time)
     return "Added user name!"
 
 
@@ -104,20 +121,44 @@ def processing_type():
     processing_type = r["processing_type"]
 
     add_processing_type(user_name, processing_type)
-    img_io, raw_img = image_decode(user_name, raw_b64_string)
+    time1 = datetime.datetime.now()
+    img_io = image_decode(user_name, raw_b64_string)
+    add_raw_image(user_name, raw_b64_string)
     img_proc = image_processing(img_io, processing_type)
-    processed_image(img_proc)
+    proc_b64_string = processed_image(user_name, img_proc)
+    time2 = datetime.datetime.now()
+    time_to_process = time2 - time1
+    add_time_to_process(time_to_process, user_name)
+
     return "Added user's image processing type preference!"
 
 
-def processed_image(img_proc):
+@app.route("/processed_image", methods=["POST"])
+def post_upload_time():
+    for user in User.objects.raw({}):
+        print(user.user_name)
+    return
+
+
+def processed_image(user_name, img_proc):
     proc_img_bytes = img_proc.tobytes()
     proc_b64_bytes = base64.b64encode(proc_img_bytes)
     proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
+    add_proc_image(user_name, proc_b64_string)
+    return proc_b64_string
+
+
+def add_proc_image(user_name_arg, proc_b64_string):
+    u = User.objects.raw({"_id": user_name_arg}).first()
+    u.processed_image = proc_b64_string
+    u.save()
+
+
+@app.route("/processed_image", methods=["GET"])
+def send_proc_image(proc_b64_string):
     image_output = {"processed_image": proc_b64_string
                     }
-    # return jsonify(image_output)
-
+    return jsonify(image_output)
 
 if __name__ == '__main__':
     app.run()
