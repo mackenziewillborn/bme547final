@@ -56,7 +56,7 @@ def first_screen():
     username_entry.grid(column=0, row=1)
 
     browse_btn = ttk.Button(first_frame, text='Upload Raw Image(s)',
-                            command=browse_function)
+                            command=lambda: browse_function(first_frame))
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
@@ -66,7 +66,7 @@ def first_screen():
     root.mainloop()  # shows window
 
 
-def browse_function():
+def browse_function(first_frame):
     """Creates a dialog box for the user to choose image files from
     their own local computer
 
@@ -80,6 +80,10 @@ def browse_function():
         filedialog.askopenfilenames(initialdir="/", title="Select Image"
                                     )
     raw_filenames = root.filename
+    num_files = len(raw_filenames)
+    file_label = ttk.Label(first_frame,
+                           text="{} file(s) uploaded".format(num_files))
+    file_label.grid(column=0, row=3)
 
 
 def cont_function(username, first_frame):
