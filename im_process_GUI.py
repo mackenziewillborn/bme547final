@@ -8,10 +8,11 @@ import requests
 from pymodm import connect
 import cv2
 import numpy as np
-# import matplotlib.pyplot as plt
-# import matplotlib.image as mpimg
 import io
 from imageio import imread, imwrite
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('TkAgg')
 
 root = Tk()  # makes main window
 root.title("GUI Client")
@@ -234,7 +235,7 @@ def third_screen(username, second_frame):
 
     download_btn = ttk.Button(third_frame, text='Download',
                               command=lambda: download_function
-                              (username, image_format, third_frame))
+                              (image_format, third_frame))
     download_btn.grid(column=4, row=6)
     reprocess_btn = ttk.Button(third_frame,
                                text='Apply another Processing Method',
@@ -277,6 +278,8 @@ def get_processed_image(username):
         JpegImageFile: the image file of the processed image
 
     """
+    global proc_b64_string
+
     r = requests.get(URL+'/processed_image/'+username.get())
     r_json = r.json()
     proc_b64_string = r_json['processed_image']
@@ -318,7 +321,7 @@ def image_window(username):
     root.mainloop()
 
 
-def download_function(username, image_format, third_frame):
+def download_function(image_format, third_frame):
     """Downloads the image(s) to the user's repository
 
     This function calls the get_processed_image function
@@ -328,8 +331,6 @@ def download_function(username, image_format, third_frame):
     indicates that all images were successfully downloaded.
 
     Args:
-        username (tkinter.StringVar): user-specified username to identify
-            each unique user
         image_format(tkinter.StringVar): one of three options for the image
             filetype that will be downloaded, which are either JPEG, PNG,
             or TIFF
@@ -337,15 +338,15 @@ def download_function(username, image_format, third_frame):
             to move on to the download GUI screen
 
     """
-    plot_im = get_processed_image(username)
-    img = np.asarray(plot_im)
+    proc_image_bytes = base64.b64decode(proc_b64_string)
+    proc_im = imread(io.BytesIO(proc_image_bytes))
 
     if image_format.get() == 'JPEG':
-        cv2.imwrite('messigray.jpg', img)
+        plt.imsave('processed.jpg', proc_im)
     elif image_format.get() == 'PNG':
-        cv2.imwrite('messigray.png', img)
+        plt.imsave('processed.png', proc_im)
     elif image_format.get() == 'TIFF':
-        cv2.imwrite('messigray.tiff', img)
+        plt.imsave('processed.tiff', proc_im)
 
     third_frame.destroy()
     download_frame = Frame(root)
