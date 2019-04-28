@@ -24,7 +24,7 @@ def test_add_processing_type():
     processingtype = "test processing type"
 
     add_processing_type(username, processingtype)
-    expected = Usserver_githuber.objects.raw({"_id": username}).first()
+    expected = User.objects.raw({"_id": username}).first()
 
     assert processingtype == expected.processing_type
 
