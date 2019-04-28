@@ -7,14 +7,11 @@ from tkinter import filedialog
 import requests
 from pymodm import connect
 import cv2
-# import matplotlib
+import numpy as np
 # import matplotlib.pyplot as plt
 # import matplotlib.image as mpimg
 import io
 from imageio import imread, imwrite
-from skimage import data, img_as_float
-from skimage import exposure
-from skimage import util
 
 root = Tk()  # makes main window
 root.title("GUI Client")
@@ -25,15 +22,30 @@ URL = "http://127.0.0.1:5000"
 
 def main():
     init_mongo_db()
-    username = first_screen()
+    first_screen()
 
 
 def init_mongo_db():
+    """Initializes the connection to the database through mongoDB
+
+    """
     connect("mongodb+srv://mlw60:Wm347609@bme547-r5nv9."
             "mongodb.net/test?retryWrites=true")
 
 
 def first_screen():
+    """The first screen of the GUI
+
+    The first_screen function first asks the user to enter a
+    username and saves that username as a string variable. It
+    then has a button for the user to upload their raw image(s)
+    to which they would like to perform image processing. The user
+    can choose a single image, multiple images, or a zip file of
+    images to upload. Then, the user clicks continue, which calls
+    the continue function, which sends the username to the server
+    and goes to the next screen of the GUI.
+
+    """
     first_frame = Frame(root)
     first_frame.pack()
     top_label = ttk.Label(first_frame, text="Please enter a username below:")
@@ -43,7 +55,7 @@ def first_screen():
     username_entry = ttk.Entry(first_frame, textvariable=username, width=20)
     username_entry.grid(column=0, row=1)
 
-    browse_btn = ttk.Button(first_frame, text='Upload Raw Image',
+    browse_btn = ttk.Button(first_frame, text='Upload Raw Image(s)',
                             command=browse_function)
     browse_btn.grid(column=0, row=2)
 
@@ -52,19 +64,35 @@ def first_screen():
     ok_btn.grid(column=1, row=3)
 
     root.mainloop()  # shows window
-    return username
 
 
 def browse_function():
+    """Creates a dialog box for the user to choose image files from
+    their own local computer
+
+    Allows the user to upload their raw image(s) to which they would
+    like to perform image processing. The user can choose a single image,
+    multiple images, or a zip file of images to upload.
+
+    """
     global raw_filenames
     root.filename = \
         filedialog.askopenfilenames(initialdir="/", title="Select Image"
                                     )
     raw_filenames = root.filename
-    print(raw_filenames[0])
 
 
 def cont_function(username, first_frame):
+    """Posts username information to the server and proceeds
+    to the next page of the GUI
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+            each unique user
+        first_frame (tkinter.Frame): frame of the first screen that is
+            destroyed to move on to the second screen
+
+    """
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
@@ -73,12 +101,32 @@ def cont_function(username, first_frame):
 
 
 def second_screen(username, first_frame):
+    """The second screen of the GUI
+
+    The second_screen function first destroys the first screen in order
+    to display a new screen of the GUI. It asks the user to choose the
+    image processing step they would like to user on their uploaded
+    image(s). It saves the processing types as an IntVar for later
+    use. It then provides a continue button that calls the process
+    image function when clicked.
+
+    Args:
+        username ('tkinter.StringVar'): user-specified username to identify
+            each unique user
+        first_frame ('tkinter.Frame'): frame of the first screen that is
+            destroyed to move on to the second screen
+
+    Returns:
+        tkinter.Frame: frame of the second screen that is destroyed
+        to move on to the third GUI screen
+
+    """
     first_frame.destroy()
     second_frame = Frame(root)
     second_frame.pack()
 
     top_label = ttk.Label(second_frame,
-                          text="Select image processing steps:",
+                          text="Select image processing step:",
                           font=("Helvetica", 20))
     top_label.grid(column=0, row=0)
 
@@ -106,10 +154,29 @@ def second_screen(username, first_frame):
 
 
 def process_image(username, process_method, second_frame):
+    """Converts image to b64 string, parses the processing
+    type variable, and sends information to server
+
+    The process_image function first encodes the raw image and
+    turns it into a b64 string. It then reads in the IntVar that
+    was specifies previously by the user to determine which processing
+    type the user chose. It finally send the username, raw b64 string,
+    and specified processing type to the server and calls the third
+    screen function to proceed to the next screen in the GUI.
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+            each unique user
+        process_method (tkinter.IntVar): a value of either 1, 2, 3, or 4
+            that corresponds with histogram equalization, contrast stretching,
+            log compression, or reverse video
+        second_frame (tkinter.Frame): frame of the second screen that is
+            destroyed to move on to the third GUI screen
+
+    """
     with open(raw_filenames[0], "rb") as raw_image_file:
         raw_b64_bytes = base64.b64encode(raw_image_file.read())
     raw_b64_string = str(raw_b64_bytes, encoding='utf-8')
-    # figure out how to set hist eq as default
     if process_method.get() == 1:
         processing_type = 'hist_eq'
     elif process_method.get() == 2:
@@ -161,18 +228,13 @@ def third_screen(username, second_frame):
                         rowspan=2, columnspan=2, sticky=W)
 
     image_format = StringVar()
-    ttk.Radiobutton(third_frame, text='JPEG',
-                    variable=image_format,
-                    value='JPEG').grid(column=3, row=2, sticky=W)
-    ttk.Radiobutton(third_frame,
-                    text='PNG', variable=image_format,
-                    value='PNG').grid(column=3, row=3, sticky=W)
-    ttk.Radiobutton(third_frame,
-                    text='TIFF', variable=image_format,
-                    value='TIFF').grid(column=3, row=4, sticky=W)
+    dropdown_menu = ttk.Combobox(third_frame, textvariable=image_format)
+    dropdown_menu.grid(column=3, row=2, sticky=W)
+    dropdown_menu['values'] = ('JPEG', 'PNG', 'TIFF')
 
     download_btn = ttk.Button(third_frame, text='Download',
-                              command=download_function)
+                              command=lambda: download_function
+                              (username, image_format, third_frame))
     download_btn.grid(column=4, row=6)
     reprocess_btn = ttk.Button(third_frame,
                                text='Apply another Processing Method',
@@ -185,6 +247,17 @@ def third_screen(username, second_frame):
 
 
 def get_time_metadata(username):
+    """Gets the time uploaded and processing time for the uploaded image(s)
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+        each unique user
+
+    Returns:
+        str: the time that the image(s) were uploaded to the database
+        str: the amount of time the server took to process the image(s)
+
+    """
     r = requests.get(URL+'/time_metadata/'+username.get())
     r_json = r.json()
     time_uploaded = r_json['time_uploaded']
@@ -192,17 +265,45 @@ def get_time_metadata(username):
     return time_uploaded, process_time
 
 
+def get_processed_image(username):
+    """Gets the b64 string of the processed image from the server and
+    converts it to an image file
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+        each unique user
+
+    Returns:
+        JpegImageFile: the image file of the processed image
+
+    """
+    r = requests.get(URL+'/processed_image/'+username.get())
+    r_json = r.json()
+    proc_b64_string = r_json['processed_image']
+    proc_image_bytes = base64.b64decode(proc_b64_string)
+    plot_im = Image.open(io.BytesIO(proc_image_bytes))
+    return plot_im
+
+
 def image_window(username):
+    """Displays the raw image and processed image side by side for
+    comparison
+
+    This function creates a new window to display both images. It uses
+    the raw filepath to display the raw image, then calls the
+    get_processed_image function in order to display the processed image.
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+        each unique user
+
+    """
     image_win = Toplevel(root)
 
     raw_open = Image.open(raw_filenames[0])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    proc_b64_string = get_processed_image(username)
-    proc_image_bytes = base64.b64decode(proc_b64_string)
-    # proc_img_io = imread(io.BytesIO(proc_image_bytes))
-    # proc_img = np.asarray(proc_img_io)
-    plot_im = Image.open(io.BytesIO(proc_image_bytes))
+    plot_im = get_processed_image(username)
     photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
@@ -217,19 +318,60 @@ def image_window(username):
     root.mainloop()
 
 
-def get_processed_image(username):
-    r = requests.get(URL+'/processed_image/'+username.get())
-    r_json = r.json()
-    proc_b64_string = r_json['processed_image']
-    return proc_b64_string
+def download_function(username, image_format, third_frame):
+    """Downloads the image(s) to the user's repository
 
+    This function calls the get_processed_image function
+    and creates a numpy array as an argument for the
+    cv2.imwrite command, which saves the image as the specified
+    filetype. It then moves on to the next page of the GUI that
+    indicates that all images were successfully downloaded.
 
-def download_function():
-    print('download')
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+            each unique user
+        image_format(tkinter.StringVar): one of three options for the image
+            filetype that will be downloaded, which are either JPEG, PNG,
+            or TIFF
+        third_frame: frame of the third screen that is destroyed
+            to move on to the download GUI screen
+
+    """
+    plot_im = get_processed_image(username)
+    img = np.asarray(plot_im)
+
+    if image_format.get() == 'JPEG':
+        cv2.imwrite('messigray.jpg', img)
+    elif image_format.get() == 'PNG':
+        cv2.imwrite('messigray.png', img)
+    elif image_format.get() == 'TIFF':
+        cv2.imwrite('messigray.tiff', img)
+
+    third_frame.destroy()
+    download_frame = Frame(root)
+    download_frame.pack()
+    download_label = ttk.Label(download_frame,
+                               text='All images downloaded successfully!',
+                               font=("Helvetica", 25))
+    download_label.grid(column=0, row=0)
 
 
 def reprocess_function(username, third_frame):
-    # can change this
+    """Allows users to apply a new processing type to the same image(s)
+
+    This function first destroys the third frame to display a new
+    screen of the GUI. It allows the user to select another image
+    processing step that is then applied to the same photos that
+    were previously processed. The continue button calls the
+    process_image function to process the images again.
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+            each unique user
+        third_frame (tkinter.Frame): frame of the third screen that is
+            destroyed to move on to the reprocess GUI screen
+
+    """
     # takes you back to the first screen
     third_frame.destroy()
     reprocess_frame = Frame(root)
