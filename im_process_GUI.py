@@ -240,15 +240,22 @@ def third_screen(username, second_frame):
     dropdown_menu.grid(column=3, row=2, sticky=W)
     dropdown_menu['values'] = ('JPEG', 'PNG', 'TIFF')
 
-    download_btn = ttk.Button(third_frame, text='Download',
-                              command=lambda: download_function
-                              (image_format, third_frame))
-    download_btn.grid(column=4, row=6)
     reprocess_btn = ttk.Button(third_frame,
                                text='Apply another Processing Method',
                                command=lambda:
                                reprocess_function(username, third_frame))
     reprocess_btn.grid(column=3, row=6)
+
+    download_btn = ttk.Button(third_frame, text='Download',
+                              command=lambda: download_function
+                              (username, image_format, third_frame))
+    download_btn.grid(column=4, row=6)
+
+    finish_btn = ttk.Button(third_frame,
+                            text='Finish & Exit',
+                            command=lambda:
+                            finish_function(third_frame))
+    finish_btn.grid(column=5, row=6)
 
     root.mainloop()  # shows window
     return third_frame
@@ -291,8 +298,7 @@ def get_processed_image(username):
     r_json = r.json()
     proc_b64_string = r_json['processed_image']
     proc_image_bytes = base64.b64decode(proc_b64_string)
-    plot_im = Image.open(io.BytesIO(proc_image_bytes))
-    return plot_im
+    return proc_image_bytes
 
 
 def image_window(username):
@@ -313,7 +319,8 @@ def image_window(username):
     raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    plot_im = get_processed_image(username)
+    proc_image_bytes = get_processed_image(username)
+    plot_im = Image.open(io.BytesIO(proc_image_bytes))
     photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
@@ -328,7 +335,7 @@ def image_window(username):
     root.mainloop()
 
 
-def download_function(image_format, third_frame):
+def download_function(username, image_format, third_frame):
     """Downloads the image(s) to the user's repository
 
     This function calls the get_processed_image function
@@ -338,6 +345,8 @@ def download_function(image_format, third_frame):
     indicates that all images were successfully downloaded.
 
     Args:
+        username (tkinter.StringVar): user-specified username to identify
+        each unique user
         image_format(tkinter.StringVar): one of three options for the image
             filetype that will be downloaded, which are either JPEG, PNG,
             or TIFF
@@ -346,7 +355,8 @@ def download_function(image_format, third_frame):
 
     """
     import matplotlib.pyplot as plt
-    proc_image_bytes = base64.b64decode(proc_b64_string)
+    global proc_b64_string
+    proc_image_bytes = get_processed_image(username)
     proc_im = imread(io.BytesIO(proc_image_bytes))
 
     if image_format.get() == 'JPEG':
@@ -356,13 +366,19 @@ def download_function(image_format, third_frame):
     elif image_format.get() == 'TIFF':
         plt.imsave('processed.tiff', proc_im)
 
+    finish_label = ttk.Label(third_frame,
+                             text='All images downloaded successfully!')
+    finish_label.grid(column=3, row=5)
+
+
+def finish_function(third_frame):
     third_frame.destroy()
-    download_frame = Frame(root)
-    download_frame.pack()
-    download_label = ttk.Label(download_frame,
-                               text='All images downloaded successfully!',
-                               font=("Helvetica", 25))
-    download_label.grid(column=0, row=0)
+    # finish_frame = Frame(root)
+    # finish_frame.pack()
+    # finish_label = ttk.Label(finish_frame,
+    #                          text='All images downloaded successfully!',
+    #                          font=("Helvetica", 25))
+    # finish_label.grid(column=0, row=0, padx=20, pady=20)
 
 
 def reprocess_function(username, third_frame):
