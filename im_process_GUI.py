@@ -33,6 +33,10 @@ def init_mongo_db():
             "mongodb.net/test?retryWrites=true")
 
 
+def server_on():
+    r = requests.get(URL+"/")
+
+
 def first_screen():
     """The first screen of the GUI
 

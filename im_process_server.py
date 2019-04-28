@@ -29,6 +29,11 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
 mongo = PyMongo(app)
 
 
+@app.route("/", methods=["GET"])
+def server_on():
+    return "Image Processing Server On"
+
+
 @app.route("/user_name", methods=["POST"])
 def user_name():
     r = request.get_json()
