@@ -11,7 +11,6 @@ import numpy as np
 import io
 from imageio import imread, imwrite
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 
 root = Tk()  # makes main window
@@ -175,22 +174,26 @@ def process_image(username, process_method, second_frame):
             destroyed to move on to the third GUI screen
 
     """
-    with open(raw_filenames[0], "rb") as raw_image_file:
-        raw_b64_bytes = base64.b64encode(raw_image_file.read())
-    raw_b64_string = str(raw_b64_bytes, encoding='utf-8')
-    if process_method.get() == 1:
-        processing_type = 'hist_eq'
-    elif process_method.get() == 2:
-        processing_type = 'con_stretch'
-    elif process_method.get() == 3:
-        processing_type = 'log_comp'
-    elif process_method.get() == 4:
-        processing_type = 'reverse_vid'
-    else:
-        processing_type = 'hist_eq'
+    raw_b64_strings = []
+
+    for i in range(len(raw_filenames)):
+        with open(raw_filenames[i], "rb") as raw_image_file:
+            raw_b64_bytes = base64.b64encode(raw_image_file.read())
+        raw_b64_string = str(raw_b64_bytes, encoding='utf-8')
+        raw_b64_strings.append(raw_b64_string)
+        if process_method.get() == 1:
+            processing_type = 'hist_eq'
+        elif process_method.get() == 2:
+            processing_type = 'con_stretch'
+        elif process_method.get() == 3:
+            processing_type = 'log_comp'
+        elif process_method.get() == 4:
+            processing_type = 'reverse_vid'
+        else:
+            processing_type = 'hist_eq'
 
     user_processing_type = {"user_name": username.get(),
-                            "raw_b64_string": raw_b64_string,
+                            "raw_b64_strings": raw_b64_strings,
                             "processing_type": processing_type}
     requests.post(URL+'/processing_type', json=user_processing_type)
     third_screen(username, second_frame)
@@ -303,7 +306,7 @@ def image_window(username):
     """
     image_win = Toplevel(root)
 
-    raw_open = Image.open(raw_filenames[0])
+    raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
     plot_im = get_processed_image(username)
@@ -338,6 +341,7 @@ def download_function(image_format, third_frame):
             to move on to the download GUI screen
 
     """
+    import matplotlib.pyplot as plt
     proc_image_bytes = base64.b64decode(proc_b64_string)
     proc_im = imread(io.BytesIO(proc_image_bytes))
 
