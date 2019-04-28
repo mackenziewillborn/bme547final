@@ -7,6 +7,14 @@ from tkinter import filedialog
 import requests
 from pymodm import connect
 import cv2
+# import matplotlib
+# import matplotlib.pyplot as plt
+# import matplotlib.image as mpimg
+import io
+from imageio import imread, imwrite
+from skimage import data, img_as_float
+from skimage import exposure
+from skimage import util
 
 root = Tk()  # makes main window
 root.title("GUI Client")
@@ -47,6 +55,23 @@ def first_screen():
     return username
 
 
+def browse_function():
+    global raw_filenames
+    root.filename = \
+        filedialog.askopenfilenames(initialdir="/", title="Select Image"
+                                    )
+    raw_filenames = root.filename
+    print(raw_filenames[0])
+
+
+def cont_function(username, first_frame):
+    new_user = {"user_name": username.get()
+                }
+    requests.post(URL+'/user_name', json=new_user)
+    second_screen(username, first_frame)
+    pass
+
+
 def second_screen(username, first_frame):
     first_frame.destroy()
     second_frame = Frame(root)
@@ -58,7 +83,6 @@ def second_screen(username, first_frame):
     top_label.grid(column=0, row=0)
 
     process_method = IntVar()
-    im_display = IntVar()
     ttk.Radiobutton(second_frame, text="Histogram Equalization",
                     variable=process_method,
                     value=1).grid(column=0, row=1, sticky=W)
@@ -79,81 +103,6 @@ def second_screen(username, first_frame):
 
     root.mainloop()  # shows window
     return second_frame
-
-
-def third_screen(username, second_frame):
-    second_frame.destroy()
-    third_frame = Frame(root)
-    third_frame.pack()
-
-    r = requests.get(URL+'/time_uploaded/'+username.get())
-    r_json = r.json()
-    print(r_json)
-    time_uploaded = r_json['time_uploaded']
-    print(time_uploaded)
-    ttk.Label(third_frame, text="Time Uploaded: {}".
-              format(time_uploaded)).grid(column=0,
-                                          row=0, columnspan=2, sticky=W)
-    process_time = r_json['process_time']
-    ttk.Label(third_frame, text="Time to Process: {}".
-              format(process_time)).grid(column=0,
-                                         row=1, columnspan=2, sticky=W)
-
-    im_size = cv2.imread(raw_filenames[0], cv2.IMREAD_UNCHANGED)
-    height = im_size.shape[0]
-    width = im_size.shape[1]
-    ttk.Label(third_frame, text="Image Size: {} x {} pixels".
-              format(width, height)).grid(column=0, row=2,
-                                          columnspan=2, sticky=W)
-
-    ok_btn = ttk.Button(third_frame,
-                        text='Raw vs. Processed Images',
-                        command=lambda: image_window())
-    ok_btn.grid(column=0, row=3)
-
-    image_download = ttk.Label(third_frame,
-                               text="Download processed image as:")
-    image_download.grid(column=3, row=0,
-                        rowspan=2, columnspan=2, sticky=W)
-
-    image_format = StringVar()
-    ttk.Radiobutton(third_frame, text='JPEG',
-                    variable=image_format,
-                    value='JPEG').grid(column=3, row=2, sticky=W)
-    ttk.Radiobutton(third_frame,
-                    text='PNG', variable=image_format,
-                    value='PNG').grid(column=3, row=3, sticky=W)
-    ttk.Radiobutton(third_frame,
-                    text='TIFF', variable=image_format,
-                    value='TIFF').grid(column=3, row=4, sticky=W)
-
-    ok_btn = ttk.Button(third_frame, text='Download',
-                        command=download_function)
-    ok_btn.grid(column=4, row=6)
-    reprocess_btn = ttk.Button(third_frame,
-                               text='Apply another Processing Method',
-                               command=lambda:
-                               reprocess_function(username, third_frame))
-    reprocess_btn.grid(column=3, row=6)
-    root.mainloop()  # shows window
-    return third_frame
-
-
-def browse_function():
-    global raw_filenames
-    root.filename = \
-        filedialog.askopenfilenames(initialdir="/", title="Select Image"
-                                    )
-    raw_filenames = root.filename
-    print(raw_filenames[0])
-
-
-def cont_function(username, first_frame):
-    new_user = {"user_name": username.get()
-                }
-    requests.post(URL+'/user_name', json=new_user)
-    second_screen(username, first_frame)
-    pass
 
 
 def process_image(username, process_method, second_frame):
@@ -180,27 +129,99 @@ def process_image(username, process_method, second_frame):
     return
 
 
-def image_window():
+def third_screen(username, second_frame):
+    second_frame.destroy()
+    third_frame = Frame(root)
+    third_frame.pack()
+    time_uploaded, process_time = get_time_metadata(username)
+
+    ttk.Label(third_frame, text="Time Uploaded: {}".
+              format(time_uploaded)).grid(column=0,
+                                          row=0, columnspan=2, sticky=W)
+
+    ttk.Label(third_frame, text="Time to Process: {}".
+              format(process_time)).grid(column=0,
+                                         row=1, columnspan=2, sticky=W)
+
+    im_size = cv2.imread(raw_filenames[0], cv2.IMREAD_UNCHANGED)
+    height = im_size.shape[0]
+    width = im_size.shape[1]
+    ttk.Label(third_frame, text="Image Size: {} x {} pixels".
+              format(width, height)).grid(column=0, row=2,
+                                          columnspan=2, sticky=W)
+
+    display_btn = ttk.Button(third_frame,
+                             text='Raw vs. Processed Images',
+                             command=lambda: image_window(username))
+    display_btn.grid(column=0, row=3)
+
+    image_download = ttk.Label(third_frame,
+                               text="Download processed image as:")
+    image_download.grid(column=3, row=0,
+                        rowspan=2, columnspan=2, sticky=W)
+
+    image_format = StringVar()
+    ttk.Radiobutton(third_frame, text='JPEG',
+                    variable=image_format,
+                    value='JPEG').grid(column=3, row=2, sticky=W)
+    ttk.Radiobutton(third_frame,
+                    text='PNG', variable=image_format,
+                    value='PNG').grid(column=3, row=3, sticky=W)
+    ttk.Radiobutton(third_frame,
+                    text='TIFF', variable=image_format,
+                    value='TIFF').grid(column=3, row=4, sticky=W)
+
+    download_btn = ttk.Button(third_frame, text='Download',
+                              command=download_function)
+    download_btn.grid(column=4, row=6)
+    reprocess_btn = ttk.Button(third_frame,
+                               text='Apply another Processing Method',
+                               command=lambda:
+                               reprocess_function(username, third_frame))
+    reprocess_btn.grid(column=3, row=6)
+
+    root.mainloop()  # shows window
+    return third_frame
+
+
+def get_time_metadata(username):
+    r = requests.get(URL+'/time_metadata/'+username.get())
+    r_json = r.json()
+    time_uploaded = r_json['time_uploaded']
+    process_time = r_json['process_time']
+    return time_uploaded, process_time
+
+
+def image_window(username):
     image_win = Toplevel(root)
 
     raw_open = Image.open(raw_filenames[0])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    proc_open = Image.open("/Users/Connor/downloads/101_ObjectCategories/" +
-                           "starfish/image_0069.jpg")
-    # change eventually to processed image
-    proc_image = ImageTk.PhotoImage(proc_open)
+    proc_b64_string = get_processed_image(username)
+    proc_image_bytes = base64.b64decode(proc_b64_string)
+    # proc_img_io = imread(io.BytesIO(proc_image_bytes))
+    # proc_img = np.asarray(proc_img_io)
+    plot_im = Image.open(io.BytesIO(proc_image_bytes))
+    photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
     panel1.grid(row=0, column=0)
     panel1 = Label(image_win, text="Raw Image")
     panel1.grid(row=1, column=0)
 
-    panel2 = Label(image_win, image=proc_image)
+    panel2 = Label(image_win, image=photoimg)
     panel2.grid(row=0, column=1)
     panel1 = Label(image_win, text="Processed Image")
     panel1.grid(row=1, column=1)
     root.mainloop()
+
+
+def get_processed_image(username):
+    r = requests.get(URL+'/processed_image/'+username.get())
+    r_json = r.json()
+    proc_b64_string = r_json['processed_image']
+    return proc_b64_string
 
 
 def download_function():
@@ -238,6 +259,7 @@ def reprocess_function(username, third_frame):
                         process_image(username, process_method,
                                       reprocess_frame))
     ok_btn.grid(column=0, row=7)
+
 
 if __name__ == '__main__':
     main()
