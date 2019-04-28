@@ -53,13 +53,13 @@ def add_user_name(user_name_arg, time):
 def processing_type():
     r = request.get_json()
     user_name = r["user_name"]
-    raw_b64_string = r["raw_b64_string"]
+    raw_b64_strings = r["raw_b64_strings"]
     processing_type = r["processing_type"]
 
     add_processing_type(user_name, processing_type)
     time1 = datetime.datetime.now()
-    img_io = image_decode(user_name, raw_b64_string)
-    add_raw_image(user_name, raw_b64_string)
+    img_io = image_decode(user_name, raw_b64_strings)
+    add_raw_image(user_name, raw_b64_strings)
     img_proc = image_processing(img_io, processing_type)
     proc_b64_string = processed_image(user_name, img_proc)
     time2 = datetime.datetime.now()
@@ -75,18 +75,17 @@ def add_processing_type(user_name_arg, processing_type_arg):
     u.save()
 
 
-def image_decode(user_name_arg, raw_b64_string):
-    image_bytes = base64.b64decode(raw_b64_string)
-    img_io = imread(io.BytesIO(image_bytes))
-    plt.imsave('raw_test.jpg', img_io)
-    # with open('new-img.jpg', 'wb') as raw_img:
-    #     raw_img.write(image_bytes)
+def image_decode(user_name_arg, raw_b64_strings):
+    for i in range(len(raw_b64_strings)):
+        image_bytes = base64.b64decode(raw_b64_strings[i])
+        img_io = imread(io.BytesIO(image_bytes))
+        plt.imsave('raw_test_{}.jpg'.format(i), img_io)
     return img_io
 
 
-def add_raw_image(user_name_arg, raw_b64_string):
+def add_raw_image(user_name_arg, raw_b64_strings):
     u = User.objects.raw({"_id": user_name_arg}).first()
-    u.original_image = raw_b64_string
+    u.original_image = raw_b64_strings
     u.save()
 
 
