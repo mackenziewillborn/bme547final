@@ -11,7 +11,6 @@ import numpy as np
 import io
 from imageio import imread, imwrite
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 
 root = Tk()  # makes main window
@@ -57,7 +56,7 @@ def first_screen():
     username_entry.grid(column=0, row=1)
 
     browse_btn = ttk.Button(first_frame, text='Upload Raw Image(s)',
-                            command=browse_function)
+                            command=lambda: browse_function(first_frame))
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
@@ -67,7 +66,7 @@ def first_screen():
     root.mainloop()  # shows window
 
 
-def browse_function():
+def browse_function(first_frame):
     """Creates a dialog box for the user to choose image files from
     their own local computer
 
@@ -81,6 +80,10 @@ def browse_function():
         filedialog.askopenfilenames(initialdir="/", title="Select Image"
                                     )
     raw_filenames = root.filename
+    num_files = len(raw_filenames)
+    file_label = ttk.Label(first_frame,
+                           text="{} file(s) uploaded".format(num_files))
+    file_label.grid(column=0, row=3)
 
 
 def cont_function(username, first_frame):
@@ -175,22 +178,26 @@ def process_image(username, process_method, second_frame):
             destroyed to move on to the third GUI screen
 
     """
-    with open(raw_filenames[0], "rb") as raw_image_file:
-        raw_b64_bytes = base64.b64encode(raw_image_file.read())
-    raw_b64_string = str(raw_b64_bytes, encoding='utf-8')
-    if process_method.get() == 1:
-        processing_type = 'hist_eq'
-    elif process_method.get() == 2:
-        processing_type = 'con_stretch'
-    elif process_method.get() == 3:
-        processing_type = 'log_comp'
-    elif process_method.get() == 4:
-        processing_type = 'reverse_vid'
-    else:
-        processing_type = 'hist_eq'
+    raw_b64_strings = []
+
+    for i in range(len(raw_filenames)):
+        with open(raw_filenames[i], "rb") as raw_image_file:
+            raw_b64_bytes = base64.b64encode(raw_image_file.read())
+        raw_b64_string = str(raw_b64_bytes, encoding='utf-8')
+        raw_b64_strings.append(raw_b64_string)
+        if process_method.get() == 1:
+            processing_type = 'hist_eq'
+        elif process_method.get() == 2:
+            processing_type = 'con_stretch'
+        elif process_method.get() == 3:
+            processing_type = 'log_comp'
+        elif process_method.get() == 4:
+            processing_type = 'reverse_vid'
+        else:
+            processing_type = 'hist_eq'
 
     user_processing_type = {"user_name": username.get(),
-                            "raw_b64_string": raw_b64_string,
+                            "raw_b64_strings": raw_b64_strings,
                             "processing_type": processing_type}
     requests.post(URL+'/processing_type', json=user_processing_type)
     third_screen(username, second_frame)
@@ -233,15 +240,22 @@ def third_screen(username, second_frame):
     dropdown_menu.grid(column=3, row=2, sticky=W)
     dropdown_menu['values'] = ('JPEG', 'PNG', 'TIFF')
 
-    download_btn = ttk.Button(third_frame, text='Download',
-                              command=lambda: download_function
-                              (image_format, third_frame))
-    download_btn.grid(column=4, row=6)
     reprocess_btn = ttk.Button(third_frame,
                                text='Apply another Processing Method',
                                command=lambda:
                                reprocess_function(username, third_frame))
     reprocess_btn.grid(column=3, row=6)
+
+    download_btn = ttk.Button(third_frame, text='Download',
+                              command=lambda: download_function
+                              (username, image_format, third_frame))
+    download_btn.grid(column=4, row=6)
+
+    finish_btn = ttk.Button(third_frame,
+                            text='Finish & Exit',
+                            command=lambda:
+                            finish_function(third_frame))
+    finish_btn.grid(column=5, row=6)
 
     root.mainloop()  # shows window
     return third_frame
@@ -284,8 +298,7 @@ def get_processed_image(username):
     r_json = r.json()
     proc_b64_string = r_json['processed_image']
     proc_image_bytes = base64.b64decode(proc_b64_string)
-    plot_im = Image.open(io.BytesIO(proc_image_bytes))
-    return plot_im
+    return proc_image_bytes
 
 
 def image_window(username):
@@ -303,10 +316,11 @@ def image_window(username):
     """
     image_win = Toplevel(root)
 
-    raw_open = Image.open(raw_filenames[0])
+    raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    plot_im = get_processed_image(username)
+    proc_image_bytes = get_processed_image(username)
+    plot_im = Image.open(io.BytesIO(proc_image_bytes))
     photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
@@ -321,7 +335,7 @@ def image_window(username):
     root.mainloop()
 
 
-def download_function(image_format, third_frame):
+def download_function(username, image_format, third_frame):
     """Downloads the image(s) to the user's repository
 
     This function calls the get_processed_image function
@@ -331,6 +345,8 @@ def download_function(image_format, third_frame):
     indicates that all images were successfully downloaded.
 
     Args:
+        username (tkinter.StringVar): user-specified username to identify
+        each unique user
         image_format(tkinter.StringVar): one of three options for the image
             filetype that will be downloaded, which are either JPEG, PNG,
             or TIFF
@@ -338,7 +354,9 @@ def download_function(image_format, third_frame):
             to move on to the download GUI screen
 
     """
-    proc_image_bytes = base64.b64decode(proc_b64_string)
+    import matplotlib.pyplot as plt
+    global proc_b64_string
+    proc_image_bytes = get_processed_image(username)
     proc_im = imread(io.BytesIO(proc_image_bytes))
 
     if image_format.get() == 'JPEG':
@@ -348,13 +366,19 @@ def download_function(image_format, third_frame):
     elif image_format.get() == 'TIFF':
         plt.imsave('processed.tiff', proc_im)
 
+    finish_label = ttk.Label(third_frame,
+                             text='All images downloaded successfully!')
+    finish_label.grid(column=3, row=5)
+
+
+def finish_function(third_frame):
     third_frame.destroy()
-    download_frame = Frame(root)
-    download_frame.pack()
-    download_label = ttk.Label(download_frame,
-                               text='All images downloaded successfully!',
-                               font=("Helvetica", 25))
-    download_label.grid(column=0, row=0)
+    # finish_frame = Frame(root)
+    # finish_frame.pack()
+    # finish_label = ttk.Label(finish_frame,
+    #                          text='All images downloaded successfully!',
+    #                          font=("Helvetica", 25))
+    # finish_label.grid(column=0, row=0, padx=20, pady=20)
 
 
 def reprocess_function(username, third_frame):
