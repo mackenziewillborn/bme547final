@@ -408,7 +408,6 @@ def download_function(username, image_format, third_frame):
             destroyed to move on to the download GUI screen
     """
     import matplotlib.pyplot as plt
-    
     proc_images_bytes = get_processed_image(username)
     for i in range(len(proc_images_bytes)):
         proc_im = imread(io.BytesIO(proc_images_bytes[i]))
