@@ -62,8 +62,7 @@ def first_screen():
 
     ok_btn = ttk.Button(first_frame, text='Continue',
                         command=lambda: cont_function(username,
-                                                      first_frame,
-                                                      raw_filenames))
+                                                      first_frame))
     ok_btn.grid(column=1, row=3)
 
     root.mainloop()  # shows window
@@ -93,7 +92,7 @@ def browse_function(first_frame):
     file_label.grid(column=0, row=3)
 
 
-def cont_function(username, first_frame, raw_filenames):
+def cont_function(username, first_frame):
     """Posts username information to the server and proceeds
     to the next page of the GUI
 
@@ -102,23 +101,27 @@ def cont_function(username, first_frame, raw_filenames):
             each unique user
         first_frame (tkinter.Frame): frame of the first screen that is
             destroyed to move on to the second screen
-        raw_filenames (tuple): all of the raw filenames of the uploaded
-            images
     """
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
 
-    if len(raw_filenames) == 0:
-        raise KeyError("No images selected.")
-    else:
-        for i in raw_filenames:
-            if (i.lower().endswith("jpeg") is False) \
-                    and (i.lower().endswith("jpg") is False) \
-                    and (i.lower().endswith("tiff") is False) \
-                    and (i.lower().endswith("tif") is False) \
-                    and (i.lower().endswith("png") is False):
-                raise TypeError("Images are not the right file type.")
+    try:
+        if len(raw_filenames) == 0:
+            raise KeyError("No images selected.")
+        else:
+            for i in raw_filenames:
+                if (i.lower().endswith("jpeg") is False) \
+                        and (i.lower().endswith("jpg") is False) \
+                        and (i.lower().endswith("tiff") is False) \
+                        and (i.lower().endswith("tif") is False) \
+                        and (i.lower().endswith("png") is False):
+                    raise TypeError("Images are not the right file type.")
+    except NameError:
+        return "No images selected."
+
+    if not username.get():
+        raise KeyError("No username entered")
 
     second_screen(username, first_frame)
     pass
