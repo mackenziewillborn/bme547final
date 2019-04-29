@@ -225,40 +225,55 @@ def third_screen(username, second_frame):
               format(width, height)).grid(column=0, row=2,
                                           columnspan=2, sticky=W)
 
-    display_btn = ttk.Button(third_frame,
-                             text='View Raw/Processed Images and Histograms',
+    display_img = ttk.Button(third_frame,
+                             text='View Raw and Processed Images',
                              command=lambda: image_window(username))
-    display_btn.grid(column=0, row=3)
+    display_img.grid(column=0, row=3)
+
+    display_hist = ttk.Button(third_frame,
+                              text='View Histograms',
+                              command=lambda: hist_window(username))
+    display_hist.grid(column=0, row=4)
 
     image_download = ttk.Label(third_frame,
                                text="Download processed image as:")
-    image_download.grid(column=3, row=0,
+    image_download.grid(column=2, row=0,
                         rowspan=2, columnspan=2, sticky=W)
 
     image_format = StringVar()
     dropdown_menu = ttk.Combobox(third_frame, textvariable=image_format)
-    dropdown_menu.grid(column=3, row=2, sticky=W)
+    dropdown_menu.grid(column=2, row=2, sticky=W)
     dropdown_menu['values'] = ('JPEG', 'PNG', 'TIFF')
 
     reprocess_btn = ttk.Button(third_frame,
                                text='Apply another Processing Method',
                                command=lambda:
                                reprocess_function(username, third_frame))
-    reprocess_btn.grid(column=3, row=6)
+    reprocess_btn.grid(column=0, row=5, sticky=W, pady=20)
 
     download_btn = ttk.Button(third_frame, text='Download',
                               command=lambda: download_function
                               (username, image_format, third_frame))
-    download_btn.grid(column=4, row=6)
+    download_btn.grid(column=2, row=3, sticky=W)
 
     finish_btn = ttk.Button(third_frame,
                             text='Finish & Exit',
                             command=lambda:
                             finish_function(third_frame))
-    finish_btn.grid(column=5, row=6)
+    finish_btn.grid(column=2, row=5, sticky=W, pady=20)
+    new_image_btn = ttk.Button(third_frame,
+                               text='Return to Homepage',
+                               command=lambda: return_function(third_frame)
+                               )
+    new_image_btn.grid(column=1, row=5, sticky=W, pady=20)
 
     root.mainloop()  # shows window
     return third_frame
+
+
+def return_function(third_frame):
+    third_frame.destroy()
+    first_screen()
 
 
 def get_time_metadata(username):
@@ -325,7 +340,6 @@ def image_window(username):
         username (tkinter.StringVar): user-specified username to identify
         each unique user
     """
-    from matplotlib.figure import Figure
     image_win = Toplevel(root)
     # w = Scrollbar(image_win)
     # w.pack()
@@ -346,22 +360,29 @@ def image_window(username):
     panel1 = Label(image_win, text="Processed Image")
     panel1.grid(row=1, column=1)
 
+    root.mainloop()
+
+
+def hist_window(username):
+    from matplotlib.figure import Figure
+    hist_win = Toplevel(root)
+    proc_images_bytes = get_processed_image(username)
+
     # display raw histogram
-    fig_raw = Figure(figsize=(5, 4), dpi=100)
+    fig_raw = Figure(figsize=(6, 5), dpi=100)
     ax_raw = fig_raw.add_subplot(111)
     img_raw = cv2.imread(raw_filenames[0])
-    canvas_raw = display_histogram(fig_raw, ax_raw, img_raw, image_win, 'Raw')
+    canvas_raw = display_histogram(fig_raw, ax_raw, img_raw, hist_win, 'Raw')
     canvas_raw.get_tk_widget().grid(row=2, column=0)
 
     # display processed histogram
-    fig_proc = Figure(figsize=(5, 4), dpi=100)
+    fig_proc = Figure(figsize=(6, 5), dpi=100)
     ax_proc = fig_proc.add_subplot(111)
     proc_im = imread(io.BytesIO(proc_images_bytes[-1]))
     img_proc = np.asarray(proc_im.astype('uint8'))
     canvas_proc = display_histogram(fig_proc, ax_proc, img_proc,
-                                    image_win, 'Processed')
+                                    hist_win, 'Processed')
     canvas_proc.get_tk_widget().grid(row=2, column=1)
-    root.mainloop()
 
 
 def download_function(username, image_format, third_frame):
@@ -392,6 +413,8 @@ def download_function(username, image_format, third_frame):
             plt.imsave('processed_{}.png'.format(i), proc_im)
         elif image_format.get() == 'TIFF':
             plt.imsave('processed_{}.tiff'.format(i), proc_im)
+        else:
+            plt.imsave('processed_{}.jpg'.format(i), proc_im)
 
     finish_label = ttk.Label(third_frame,
                              text='All images downloaded successfully!')
