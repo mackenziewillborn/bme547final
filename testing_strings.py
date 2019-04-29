@@ -1,3 +1,8 @@
+import base64 
+import io
+from imageio import imread 
+import numpy as np
+
 rawb64image = ",iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAA" \
                    "BXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZ" \
                    "VJlYWR5ccllPAAACk5JREFUeNrUmQlsW/Udx7/P933Edk" \
