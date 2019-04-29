@@ -1,5 +1,5 @@
 # BME547 Final Project - Image Processing Server
-## Mackenzie Willborn, Kelsey Li, Connor Johnson
+## Mackenzie Willborn,   Kelsey Li,   Connor Johnson
 
 
 This repository hosts the code for our final project. We have created a database hosting user information, raw images, processed images, and image metadata. Using our user-friendly GUI, information is sent through the server to be posted on the database and retreived for use later on.
