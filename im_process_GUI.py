@@ -27,7 +27,6 @@ def main():
 
 def init_mongo_db():
     """Initializes the connection to the database through mongoDB
-
     """
     connect("mongodb+srv://mlw60:Wm347609@bme547-r5nv9."
             "mongodb.net/test?retryWrites=true")
@@ -35,7 +34,6 @@ def init_mongo_db():
 
 def first_screen():
     """The first screen of the GUI
-
     The first_screen function first asks the user to enter a
     username and saves that username as a string variable. It
     then has a button for the user to upload their raw image(s)
@@ -44,7 +42,6 @@ def first_screen():
     images to upload. Then, the user clicks continue, which calls
     the continue function, which sends the username to the server
     and goes to the next screen of the GUI.
-
     """
     first_frame = Frame(root)
     first_frame.pack()
@@ -60,7 +57,9 @@ def first_screen():
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
-                        command=lambda: cont_function(username, first_frame))
+                        command=lambda: cont_function(username,
+                                                      first_frame,
+                                                      raw_filenames))
     ok_btn.grid(column=1, row=3)
 
     root.mainloop()  # shows window
@@ -69,11 +68,9 @@ def first_screen():
 def browse_function(first_frame):
     """Creates a dialog box for the user to choose image files from
     their own local computer
-
     Allows the user to upload their raw image(s) to which they would
     like to perform image processing. The user can choose a single image,
     multiple images, or a zip file of images to upload.
-
     """
     global raw_filenames
     root.filename = \
@@ -86,44 +83,50 @@ def browse_function(first_frame):
     file_label.grid(column=0, row=3)
 
 
-def cont_function(username, first_frame):
+def cont_function(username, first_frame, raw_filenames):
     """Posts username information to the server and proceeds
     to the next page of the GUI
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
             each unique user
         first_frame (tkinter.Frame): frame of the first screen that is
             destroyed to move on to the second screen
-
     """
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
+    print(len(raw_filenames))
+    if len(raw_filenames) == 0:
+        raise KeyError("No images selected.")
+    else:
+        for i in raw_filenames:
+            if (i.lower().endswith("jpeg") is False) \
+                    and (i.lower().endswith("jpg") is False) \
+                    and (i.lower().endswith("tiff") is False) \
+                    and (i.lower().endswith("tif") is False) \
+                    and (i.lower().endswith("png") is False):
+                raise TypeError("Images are not the right file type.")
+
     second_screen(username, first_frame)
     pass
 
 
 def second_screen(username, first_frame):
     """The second screen of the GUI
-
     The second_screen function first destroys the first screen in order
     to display a new screen of the GUI. It asks the user to choose the
     image processing step they would like to user on their uploaded
     image(s). It saves the processing types as an IntVar for later
     use. It then provides a continue button that calls the process
     image function when clicked.
-
     Args:
         username ('tkinter.StringVar'): user-specified username to identify
             each unique user
         first_frame ('tkinter.Frame'): frame of the first screen that is
             destroyed to move on to the second screen
-
     Returns:
         tkinter.Frame: frame of the second screen that is destroyed
         to move on to the third GUI screen
-
     """
     first_frame.destroy()
     second_frame = Frame(root)
@@ -160,14 +163,12 @@ def second_screen(username, first_frame):
 def process_image(username, process_method, second_frame):
     """Converts image to b64 string, parses the processing
     type variable, and sends information to server
-
     The process_image function first encodes the raw image and
     turns it into a b64 string. It then reads in the IntVar that
     was specifies previously by the user to determine which processing
     type the user chose. It finally send the username, raw b64 string,
     and specified processing type to the server and calls the third
     screen function to proceed to the next screen in the GUI.
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
             each unique user
@@ -176,7 +177,6 @@ def process_image(username, process_method, second_frame):
             log compression, or reverse video
         second_frame (tkinter.Frame): frame of the second screen that is
             destroyed to move on to the third GUI screen
-
     """
     raw_b64_strings = []
 
@@ -263,15 +263,12 @@ def third_screen(username, second_frame):
 
 def get_time_metadata(username):
     """Gets the time uploaded and processing time for the uploaded image(s)
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
         each unique user
-
     Returns:
         str: the time that the image(s) were uploaded to the database
         str: the amount of time the server took to process the image(s)
-
     """
     r = requests.get(URL+'/time_metadata/'+username.get())
     r_json = r.json()
@@ -283,14 +280,11 @@ def get_time_metadata(username):
 def get_processed_image(username):
     """Gets the b64 string of the processed image from the server and
     converts it to an image file
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
         each unique user
-
     Returns:
         JpegImageFile: the image file of the processed image
-
     """
     global proc_b64_string
 
@@ -322,15 +316,12 @@ def display_histogram(fig, ax, img, image_win, img_type):
 def image_window(username):
     """Displays the raw image and processed image side by side for
     comparison
-
     This function creates a new window to display both images. It uses
     the raw filepath to display the raw image, then calls the
     get_processed_image function in order to display the processed image.
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
         each unique user
-
     """
     from matplotlib.figure import Figure
     image_win = Toplevel(root)
@@ -373,13 +364,11 @@ def image_window(username):
 
 def download_function(username, image_format, third_frame):
     """Downloads the image(s) to the user's repository
-
     This function calls the get_processed_image function
     and creates a numpy array as an argument for the
     cv2.imwrite command, which saves the image as the specified
     filetype. It then moves on to the next page of the GUI that
     indicates that all images were successfully downloaded.
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
             each unique user
@@ -388,7 +377,6 @@ def download_function(username, image_format, third_frame):
             or TIFF
         third_frame (tkinter.Frame): frame of the third screen that is
             destroyed to move on to the download GUI screen
-
     """
     import matplotlib.pyplot as plt
     global proc_b64_string
@@ -409,30 +397,25 @@ def download_function(username, image_format, third_frame):
 
 def finish_function(third_frame):
     """Exits out of the GUI completely
-
     Args:
         third_frame (tkinter.Frame): frame of the third screen that is
             destroyed to move on to the download GUI screen
-
     """
     third_frame.destroy()
 
 
 def reprocess_function(username, third_frame):
     """Allows users to apply a new processing type to the same image(s)
-
     This function first destroys the third frame to display a new
     screen of the GUI. It allows the user to select another image
     processing step that is then applied to the same photos that
     were previously processed. The continue button calls the
     process_image function to process the images again.
-
     Args:
         username (tkinter.StringVar): user-specified username to identify
             each unique user
         third_frame (tkinter.Frame): frame of the third screen that is
             destroyed to move on to the reprocess GUI screen
-
     """
     # takes you back to the first screen
     third_frame.destroy()
