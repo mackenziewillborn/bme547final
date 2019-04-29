@@ -34,3 +34,4 @@ At this point, the user has multiple choices. They can download the processed im
 
 ### Notes about the assignment
 * We tried to create Sphinx documentation and followed the same exact instructions as in lecture and that we followed for previous assignments. However, we were unable to get the documentation to work, and the interface and options seemed different for some reason. We pushed the docs folder regardless to show that we attempted the documentation.
+* The histogram equalization processing method processes correctly in the server, but when the image is converted over to the GUI to be displayed or downloaded, it becomes just a black image. The data types and manipulation for histogram equalization are the same in our code as all of the other processing types, so we aren't sure why this is happening. We created an issue and discussed this with Dr. Ward who also didn't know what the root cause was. 
