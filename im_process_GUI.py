@@ -11,13 +11,15 @@ import numpy as np
 import io
 from imageio import imread, imwrite
 import matplotlib
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 
 root = Tk()  # makes main window
 root.title("GUI Client")
 main_frame = Frame(root)
 main_frame.pack()
-URL = "http://127.0.0.1:5000"
+# URL = "http://127.0.0.1:5000"
+URL = "http://vcm-9060.vm.duke.edu:5000"
 
 
 def main():
@@ -448,7 +450,7 @@ def hist_window(username):
     # display raw histogram
     fig_raw = Figure(figsize=(6, 5), dpi=100)
     ax_raw = fig_raw.add_subplot(111)
-    img_raw = cv2.imread(raw_filenames[0])
+    img_raw = cv2.imread(raw_filenames[-1])
     canvas_raw = display_histogram(fig_raw, ax_raw, img_raw, hist_win, 'Raw')
     canvas_raw.get_tk_widget().grid(row=2, column=0)
 
