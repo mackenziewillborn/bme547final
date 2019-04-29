@@ -1,6 +1,9 @@
 from my_class import User
 import datetime
 from pymodm import connect
+import pytest
+import numpy as np
+
 
 connect("mongodb+srv://mlw60:Wm347609@bme547-r5nv9."
         "mongodb.net/test?retryWrites=true")
@@ -66,10 +69,71 @@ def test_add_time_to_process():
 
     assert timetoprocess == expected.time_to_process
 
-# test_image_decode
-# test_image_processing
-# test_hist_equalization
-# test_contrast_stretching
-# test_log_compression
-# test_reverse_video
-# test_processed_image
+
+def test_image_decode():
+    from im_process_server import image_decode
+    from testing_strings import rawb64images
+    username = "test user name"
+
+    decodedimg = image_decode(username, rawb64images)
+
+    assert np.allclose(decodedimg[0:4, 1, 1], [255, 255, 255, 255])
+
+
+def test_hist_equalization():
+    from im_process_server import hist_equalization
+    from testing_strings import img
+
+    img_eq = hist_equalization(img)
+    img_eq_list = img_eq[0:4, 1, 0:4]
+    expected = [[1., 1., 1., 0.18446181],
+                [1., 1., 1., 0.18446181],
+                [1., 1., 1., 0.18446181],
+                [1., 1., 1., 0.18446181]]
+
+    assert np.allclose(img_eq_list, np.array(expected))
+
+
+def test_contrast_stretching():
+    from im_process_server import contrast_stretching
+    from testing_strings import img
+
+    con_stretch = contrast_stretching(img)
+    con_stretch_list = con_stretch[0:4, 1, 0:4]
+
+    expected = [[255, 255, 255, 0],
+                [255, 255, 255, 0],
+                [255, 255, 255, 0],
+                [255, 255, 255, 0]]
+
+    assert np.allclose(con_stretch_list, np.array(expected))
+
+
+def test_reverse_video():
+    from im_process_server import reverse_video
+    from testing_strings import img
+
+    rev_vid = reverse_video(img)
+    rev_vid_list = rev_vid[0:4, 1, 0:4]
+
+    expected = [[0, 0, 0, 255],
+                [0, 0, 0, 255],
+                [0, 0, 0, 255],
+                [0, 0, 0, 255]]
+
+    assert np.allclose(rev_vid_list, np.array(expected))
+
+
+def test_log_compression():
+    from im_process_server import log_compression
+    from testing_strings import img
+
+    log_comp = log_compression(img)
+    log_comp_list = log_comp[0:4, 1, 0:4]
+
+    expected = [[255, 255, 255, 0],
+                [255, 255, 255, 0],
+                [255, 255, 255, 0],
+                [255, 255, 255, 0]]
+
+    assert np.allclose(log_comp_list, np.array(expected))
