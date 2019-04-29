@@ -141,6 +141,22 @@ def add_raw_image(user_name_arg, raw_b64_strings):
 
 
 def image_decode(user_name_arg, raw_b64_strings):
+    """Converts the b64 strings of the raw uploaded images into bytes
+    and then converted into imageio.core.util.Array objects that are a
+    subclass of np.ndarray with a meta attribute. JPEG images of these raw
+    objects are created in this function to check the functionality
+    of the server
+
+    Args:
+        user_name_arg (str): user-specified username to identify
+            each unique user
+        raw_b64_strings (str): b64 strings of the images uplaoded
+            by the user before image processing
+
+    Returns:
+        list: list of numpy-like objects of the images uplaoded
+            by the user before image processing
+    """
     import matplotlib.pyplot as plt
     imgs_io = []
 
@@ -153,6 +169,21 @@ def image_decode(user_name_arg, raw_b64_strings):
 
 
 def image_processing(imgs_io, processing_type):
+    """Converts the list of imageio.core.util.Array objects into numpy
+    arrays and then carries out the image processing step, returning
+    a list of numpy arrays after image processing. JPEG images of these
+    processed arrays are created in this function to check the
+    functionality of the server
+
+    Args:
+        imgs_io (list): list of numpy-like objects of the images uplaoded
+            by the user before image processing
+        processing_type (str): user-specified processing type
+            for the images
+
+    Returns:
+        list: list of numpy arrays of the images after image processing
+    """
     import matplotlib.pyplot as plt
     img_procs = []
 
@@ -233,6 +264,19 @@ def reverse_video(img):
 
 
 def processed_image(user_name, img_procs):
+    """Converts list of numpy arrays of processed images into
+    b64 strings that are saved to the MongoDB database
+
+    Args:
+        user_name (str): user-specified username to identify
+            each unique user
+        imgs_procs (list): list of numpy arrays of the images
+            after image processing
+
+    Returns:
+        list: list of b64 strings of the images uploaded by the
+        user after image processing with the specified processing method
+    """
     proc_b64_strings = []
 
     for i in range(len(img_procs)):
@@ -254,9 +298,9 @@ def add_proc_image(user_name_arg, proc_b64_strings):
     Args:
         user_name_arg (str): user-specified username to identify
             each unique user
-        proc_b64_string (str): b64 strings of the images uploaded
-            by the user after image processing with the specified
-            processing method
+        proc_b64_strings (str): list of b64 strings of the images
+            uploaded by the user after image processing with the
+            specified processing method
     """
     u = User.objects.raw({"_id": user_name_arg}).first()
     u.processed_image = proc_b64_strings
