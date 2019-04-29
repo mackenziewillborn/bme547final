@@ -95,7 +95,7 @@ def cont_function(username, first_frame, raw_filenames):
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
-    print(len(raw_filenames))
+
     if len(raw_filenames) == 0:
         raise KeyError("No images selected.")
     else:
@@ -286,13 +286,15 @@ def get_processed_image(username):
     Returns:
         JpegImageFile: the image file of the processed image
     """
-    global proc_b64_string
+    proc_images_bytes = []
 
     r = requests.get(URL+'/processed_image/'+username.get())
     r_json = r.json()
-    proc_b64_string = r_json['processed_image']
-    proc_image_bytes = base64.b64decode(proc_b64_string)
-    return proc_image_bytes
+    proc_b64_strings = r_json['processed_images']
+    for i in range(len(proc_b64_strings)):
+        proc_image_bytes = base64.b64decode(proc_b64_strings[i])
+        proc_images_bytes.append(proc_image_bytes)
+    return proc_images_bytes
 
 
 def display_histogram(fig, ax, img, image_win, img_type):
@@ -330,8 +332,8 @@ def image_window(username):
     raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    proc_image_bytes = get_processed_image(username)
-    plot_im = Image.open(io.BytesIO(proc_image_bytes))
+    proc_images_bytes = get_processed_image(username)
+    plot_im = Image.open(io.BytesIO(proc_images_bytes[-1]))
     photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
@@ -354,7 +356,7 @@ def image_window(username):
     # display processed histogram
     fig_proc = Figure(figsize=(5, 4), dpi=100)
     ax_proc = fig_proc.add_subplot(111)
-    proc_im = imread(io.BytesIO(proc_image_bytes))
+    proc_im = imread(io.BytesIO(proc_images_bytes[-1]))
     img_proc = np.asarray(proc_im.astype('uint8'))
     canvas_proc = display_histogram(fig_proc, ax_proc, img_proc,
                                     image_win, 'Processed')
@@ -379,16 +381,17 @@ def download_function(username, image_format, third_frame):
             destroyed to move on to the download GUI screen
     """
     import matplotlib.pyplot as plt
-    global proc_b64_string
-    proc_image_bytes = get_processed_image(username)
-    proc_im = imread(io.BytesIO(proc_image_bytes))
 
-    if image_format.get() == 'JPEG':
-        plt.imsave('processed.jpg', proc_im)
-    elif image_format.get() == 'PNG':
-        plt.imsave('processed.png', proc_im)
-    elif image_format.get() == 'TIFF':
-        plt.imsave('processed.tiff', proc_im)
+    proc_images_bytes = get_processed_image(username)
+    for i in range(len(proc_images_bytes)):
+        proc_im = imread(io.BytesIO(proc_images_bytes[i]))
+
+        if image_format.get() == 'JPEG':
+            plt.imsave('processed_{}.jpg'.format(i), proc_im)
+        elif image_format.get() == 'PNG':
+            plt.imsave('processed_{}.png'.format(i), proc_im)
+        elif image_format.get() == 'TIFF':
+            plt.imsave('processed_{}.tiff'.format(i), proc_im)
 
     finish_label = ttk.Label(third_frame,
                              text='All images downloaded successfully!')

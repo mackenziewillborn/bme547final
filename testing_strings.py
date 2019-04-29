@@ -2,6 +2,7 @@ import base64
 import io
 from imageio import imread
 import numpy as np
+imgs_io = []
 
 rawb64image = ",iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAA" \
                    "BXAvmHAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZ" \
@@ -91,5 +92,6 @@ rawb64images = [rawb64image, rawb64image]
 
 image_bytes = base64.b64decode(rawb64image)
 img_io = imread(io.BytesIO(image_bytes))
+imgs_io.append(img_io)
 
 img = np.asarray(img_io.astype('uint8'))

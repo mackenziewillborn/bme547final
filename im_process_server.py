@@ -94,10 +94,10 @@ def processing_type():
 
     add_processing_type(user_name, processing_type)
     time1 = datetime.datetime.now()
-    img_io = image_decode(user_name, raw_b64_strings)
     add_raw_image(user_name, raw_b64_strings)
-    img_proc = image_processing(img_io, processing_type)
-    proc_b64_string = processed_image(user_name, img_proc)
+    imgs_io = image_decode(user_name, raw_b64_strings)
+    img_procs = image_processing(imgs_io, processing_type)
+    proc_b64_strings = processed_image(user_name, img_procs)
     time2 = datetime.datetime.now()
     time_to_process = time2 - time1
     add_time_to_process(time_to_process, user_name)
@@ -119,16 +119,6 @@ def add_processing_type(user_name_arg, processing_type_arg):
     u.save()
 
 
-def image_decode(user_name_arg, raw_b64_strings):
-    import matplotlib.pyplot as plt
-
-    for i in range(len(raw_b64_strings)):
-        image_bytes = base64.b64decode(raw_b64_strings[i])
-        img_io = imread(io.BytesIO(image_bytes))
-        plt.imsave('raw_test_{}.jpg'.format(i), img_io)
-    return img_io
-
-
 def add_raw_image(user_name_arg, raw_b64_strings):
     """Saves the raw image(s) in the form of b64 string(s)
     to MongoDB database under the corresponding username
@@ -143,22 +133,37 @@ def add_raw_image(user_name_arg, raw_b64_strings):
     u.save()
 
 
-def image_processing(img_io, processing_type):
+def image_decode(user_name_arg, raw_b64_strings):
     import matplotlib.pyplot as plt
+    imgs_io = []
 
-    img = np.asarray(img_io.astype('uint8'))
-    if processing_type == 'hist_eq':
-        img_proc = hist_equalization(img)
-    elif processing_type == 'con_stretch':
-        img_proc = contrast_stretching(img)
-    elif processing_type == 'log_comp':
-        img_proc = log_compression(img)
-    elif processing_type == 'reverse_vid':
-        img_proc = reverse_video(img)
-    # else:
-    #     img_proc = hist_equalization(img)
-    plt.imsave('proc_test.jpg', img_proc)
-    return img_proc
+    for i in range(len(raw_b64_strings)):
+        image_bytes = base64.b64decode(raw_b64_strings[i])
+        img_io = imread(io.BytesIO(image_bytes))
+        imgs_io.append(img_io)
+        plt.imsave('raw_test_{}.jpg'.format(i), img_io)
+    return imgs_io
+
+
+def image_processing(imgs_io, processing_type):
+    import matplotlib.pyplot as plt
+    img_procs = []
+
+    for i in range(len(imgs_io)):
+        img = np.asarray(imgs_io[i].astype('uint8'))
+        if processing_type == 'hist_eq':
+            img_proc = hist_equalization(img)
+        elif processing_type == 'con_stretch':
+            img_proc = contrast_stretching(img)
+        elif processing_type == 'log_comp':
+            img_proc = log_compression(img)
+        elif processing_type == 'reverse_vid':
+            img_proc = reverse_video(img)
+        # else:
+        #     img_proc = hist_equalization(img)
+        img_procs.append(img_proc)
+        plt.imsave('proc_test_{}.jpg'.format(i), img_proc)
+    return img_procs
 
 
 def hist_equalization(img):
@@ -210,18 +215,22 @@ def reverse_video(img):
     return img_inv
 
 
-def processed_image(user_name, img_proc):
-    pil_img = Image.fromarray(img_proc.astype('uint8'))
-    pil_img_RGB = pil_img.convert('RGB')
-    buff = io.BytesIO()
-    pil_img_RGB.save(buff, format="JPEG")
-    proc_b64_string = base64.b64encode(buff.getvalue()).decode("utf-8")
+def processed_image(user_name, img_procs):
+    proc_b64_strings = []
 
-    add_proc_image(user_name, proc_b64_string)
-    return proc_b64_string
+    for i in range(len(img_procs)):
+        pil_img = Image.fromarray(img_procs[i].astype('uint8'))
+        pil_img_RGB = pil_img.convert('RGB')
+        buff = io.BytesIO()
+        pil_img_RGB.save(buff, format="JPEG")
+        proc_b64_string = base64.b64encode(buff.getvalue()).decode("utf-8")
+        proc_b64_strings.append(proc_b64_string)
+
+    add_proc_image(user_name, proc_b64_strings)
+    return proc_b64_strings
 
 
-def add_proc_image(user_name_arg, proc_b64_string):
+def add_proc_image(user_name_arg, proc_b64_strings):
     """Saves the processed image(s) in the form of b64 string(s)
     to MongoDB database under the corresponding username
     Args:
@@ -232,7 +241,7 @@ def add_proc_image(user_name_arg, proc_b64_string):
             processing method
     """
     u = User.objects.raw({"_id": user_name_arg}).first()
-    u.processed_image = proc_b64_string
+    u.processed_image = proc_b64_strings
     u.save()
 
 
@@ -279,7 +288,7 @@ def get_proc_image(username):
     """
     for user in User.objects.raw({}):
         if user.user_name == username:
-            image_output = {"processed_image": user.processed_image
+            image_output = {"processed_images": user.processed_image
                             }
             return jsonify(image_output)
 
