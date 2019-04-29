@@ -39,6 +39,7 @@ logging.basicConfig(filename="Main.log", filemode="w", level=logging.INFO)
 def server_on():
     """Checks if server is on
     """
+    logging.info('Server on!')
     return "Image Processing Server On"
 
 
@@ -57,6 +58,7 @@ def user_name():
 
     try:
         add_user_name(user_name, time)
+        logging.info('Username saved successfully!')
     except errors.ValidationError:
         logging.warning(Error[1])
         return jsonify(Error[1]), 500
@@ -175,6 +177,7 @@ def hist_equalization(img):
             performed
     """
     img_eq = exposure.equalize_hist(img)
+    logging.info('Histogram equalization performed!')
     return img_eq
 
 
@@ -188,6 +191,7 @@ def contrast_stretching(img):
     """
     p2, p98 = np.percentile(img, (2, 98))
     img_con = exposure.rescale_intensity(img, in_range=(p2, p98))
+    logging.info('Contrast stretching performed!')
     return img_con
 
 
@@ -200,6 +204,7 @@ def log_compression(img):
             performed
     """
     img_log = exposure.adjust_log(img, 1)
+    logging.info('Log compression performed!')
     return img_log
 
 
@@ -212,6 +217,7 @@ def reverse_video(img):
             performed
     """
     img_inv = util.invert(img, signed_float=False)
+    logging.info('Reverse video performed!')
     return img_inv
 
 
