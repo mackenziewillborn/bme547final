@@ -71,22 +71,21 @@ def first_screen():
 def browse_function(first_frame):
     """Creates a dialog box for the user to choose image files from
     their own local computer
-
     Allows the user to upload their raw image(s) to which they would
     like to perform image processing. The user can choose a single image,
-    multiple images, or a zip file of images to upload. It then updates
-    the window to display the number of images uploaded for processing.
-
-    Args:
-        first_frame (tkinter.Frame): frame of the first screen that is
-            destroyed to move on to the second screen
+    multiple images, or a zip file of images to upload.
     """
     global raw_filenames
     root.filename = \
-        filedialog.askopenfilenames(initialdir="/", title="Select Image"
-                                    )
-    raw_filenames = root.filename
-    num_files = len(raw_filenames)
+        filedialog.askopenfilenames(initialdir="/", title="Select Image")
+    first_file = root.filename[0]
+    if first_file.lower().endswith('zip') is True:
+        zf = zipfile.ZipFile(root.filename[0], 'r')
+        raw_filenames = zf.namelist()
+        num_files = len(raw_filenames)
+    else:
+        raw_filenames = root.filename
+        num_files = len(raw_filenames)
     file_label = ttk.Label(first_frame,
                            text="{} file(s) uploaded".format(num_files))
     file_label.grid(column=0, row=3)
