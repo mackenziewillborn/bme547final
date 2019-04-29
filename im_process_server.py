@@ -1,7 +1,4 @@
 import base64
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import io
 from imageio import imread, imwrite
 from PIL import ImageTk, Image
@@ -16,6 +13,8 @@ from flask import Flask, request, jsonify, abort
 from my_class import User
 from pymodm import connect
 import datetime
+import matplotlib
+matplotlib.use('TkAgg')
 
 app = Flask(__name__)
 
@@ -31,11 +30,22 @@ mongo = PyMongo(app)
 
 @app.route("/", methods=["GET"])
 def server_on():
+    """Checks if server is on
+    """
     return "Image Processing Server On"
 
 
 @app.route("/user_name", methods=["POST"])
 def user_name():
+    """Saves the username and time uploaded to MongoDB
+
+    Receives a dictionary containing the user's
+    username, and calls upload_time and add_user_name
+    to save the user's information to the database
+
+    Returns:
+        str: reports that it added the username
+    """
     r = request.get_json()
     user_name = r["user_name"]
     time = upload_time()
@@ -44,11 +54,24 @@ def user_name():
 
 
 def upload_time():
+    """Finds and saves the current timestamp
+
+    Returns:
+        time (datetime string): current time
+    """
     time = datetime.datetime.now()
     return time
 
 
 def add_user_name(user_name_arg, time):
+    """Saves the username and time uploaded to MongoDB database
+
+    Args:
+        user_name_arg (string): user-specified username to identify
+            each unique user
+        time (datetime string): the time the image(s) were
+            uploaded
+    """
     u = User(user_name=user_name_arg,
              time_uploaded=time)
     u.save()
@@ -75,12 +98,23 @@ def processing_type():
 
 
 def add_processing_type(user_name_arg, processing_type_arg):
+    """Saves the processing type to MongoDB database under the
+    corresponding username
+
+    Args:
+        user_name_arg (str): user-specified username to identify
+            each unique user
+        processing_type_arg (str): user-specified processing type
+            for the images
+    """
     u = User.objects.raw({"_id": user_name_arg}).first()
     u.processing_type = processing_type_arg
     u.save()
 
 
 def image_decode(user_name_arg, raw_b64_strings):
+    import matplotlib.pyplot as plt
+
     for i in range(len(raw_b64_strings)):
         image_bytes = base64.b64decode(raw_b64_strings[i])
         img_io = imread(io.BytesIO(image_bytes))
@@ -89,12 +123,23 @@ def image_decode(user_name_arg, raw_b64_strings):
 
 
 def add_raw_image(user_name_arg, raw_b64_strings):
+    """Saves the raw image(s) in the form of b64 string(s)
+    to MongoDB database under the corresponding username
+
+    Args:
+        user_name_arg (str): user-specified username to identify
+            each unique user
+        raw_b64_strings (str): b64 strings of the images uplaoded
+            by the user before image processing
+    """
     u = User.objects.raw({"_id": user_name_arg}).first()
     u.original_image = raw_b64_strings
     u.save()
 
 
 def image_processing(img_io, processing_type):
+    import matplotlib.pyplot as plt
+
     img = np.asarray(img_io.astype('uint8'))
     if processing_type == 'hist_eq':
         img_proc = hist_equalization(img)
@@ -111,46 +156,100 @@ def image_processing(img_io, processing_type):
 
 
 def hist_equalization(img):
+    """Performs histogram equalization processing on raw image
+
+    Args:
+        img (np array): raw image in the form of a np array
+
+    Returns:
+        np array: image array after having histogram equalization
+            performed
+    """
     img_eq = exposure.equalize_hist(img)
     return img_eq
 
 
 def contrast_stretching(img):
+    """Performs contrast stretching processing on raw image
+
+    Args:
+        img (np array): raw image in the form of a np array
+
+    Returns:
+        np array: image array after having contrast stretching
+            performed
+    """
     p2, p98 = np.percentile(img, (2, 98))
     img_con = exposure.rescale_intensity(img, in_range=(p2, p98))
     return img_con
 
 
 def log_compression(img):
+    """Performs log compression processing on raw image
+
+    Args:
+        img (np array): raw image in the form of a np array
+
+    Returns:
+        np array: image array after having log compression
+            performed
+    """
     img_log = exposure.adjust_log(img, 1)
     return img_log
 
 
 def reverse_video(img):
+    """Performs reverse video processing on raw image
+
+    Args:
+        img (np array): raw image in the form of a np array
+
+    Returns:
+        np array: image array after having log compression
+            performed
+    """
     img_inv = util.invert(img, signed_float=False)
     return img_inv
 
 
 def processed_image(user_name, img_proc):
-    # proc_img_bytes = img_proc.tobytes()
-    # proc_b64_bytes = base64.b64encode(proc_img_bytes)
     pil_img = Image.fromarray(img_proc.astype('uint8'))
+    pil_img_RGB = pil_img.convert('RGB')
     buff = io.BytesIO()
-    pil_img.save(buff, format="JPEG")
+    pil_img_RGB.save(buff, format="JPEG")
     proc_b64_string = base64.b64encode(buff.getvalue()).decode("utf-8")
 
-    # proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
     add_proc_image(user_name, proc_b64_string)
     return proc_b64_string
 
 
 def add_proc_image(user_name_arg, proc_b64_string):
+    """Saves the processed image(s) in the form of b64 string(s)
+    to MongoDB database under the corresponding username
+
+    Args:
+        user_name_arg (str): user-specified username to identify
+            each unique user
+        proc_b64_string (str): b64 strings of the images uploaded
+            by the user after image processing with the specified
+            processing method
+    """
     u = User.objects.raw({"_id": user_name_arg}).first()
     u.processed_image = proc_b64_string
     u.save()
 
 
 def add_time_to_process(time_to_process_arg, user_name_arg):
+    """Saves the amount of elapsed time the server took to
+    process the image(s) to MongoDB database under the corresponding
+    username
+
+    Args:
+        user_name_arg (str): user-specified username to identify
+            each unique user
+        time_to_process_arg (datetime str): the amount of time
+            the server took to process the image(s)
+    """
     u = User.objects.raw({"_id": user_name_arg}).first()
     u.time_to_process = time_to_process_arg
     u.save()
@@ -158,6 +257,16 @@ def add_time_to_process(time_to_process_arg, user_name_arg):
 
 @app.route("/time_metadata/<username>", methods=["GET"])
 def get_time_stamp(username):
+    """Gets the time uploaded and processing time from the
+    database
+
+    Args:
+        username (str): user-specified username to identify
+            each unique user
+
+    Returns:
+        dict: a dict of time uploaded and process time
+    """
     for user in User.objects.raw({}):
         if user.user_name == username:
             time_stamp = {"time_uploaded": user.time_uploaded,
@@ -167,11 +276,21 @@ def get_time_stamp(username):
 
 @app.route("/processed_image/<username>", methods=["GET"])
 def get_proc_image(username):
+    """Gets the processed image b64 string from the database
+
+    Args:
+        username (str): user-specified username to identify
+            each unique user
+
+    Returns:
+        dict: a dict of the processed image in the form of a b64 string
+    """
     for user in User.objects.raw({}):
         if user.user_name == username:
             image_output = {"processed_image": user.processed_image
                             }
             return jsonify(image_output)
+
 
 if __name__ == '__main__':
     app.run()
