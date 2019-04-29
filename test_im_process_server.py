@@ -76,8 +76,9 @@ def test_image_decode():
     username = "test user name"
 
     decodedimg = image_decode(username, rawb64images)
+    decode = decodedimg[0]
 
-    assert np.all(decodedimg[0:4, 1, 1] == [255, 255, 255, 255])
+    assert np.all(decode[0:4, 1, 1] == [255, 255, 255, 255])
 
 
 def test_hist_equalization():
@@ -158,10 +159,12 @@ def test_log_compression():
                      [0, 0, 0, 255]])])
 def test_image_processing(processingtype, expected):
     from im_process_server import image_processing
-    from testing_strings import img
+    from testing_strings import imgs_io
 
-    improc = image_processing(img, processingtype)
-    improc_list = improc[0:4, 1, 0:4]
+    improc = image_processing(imgs_io, processingtype)
+    improczero = improc[0]
+
+    improc_list = improczero[0:4, 1, 0:4]
 
     if processingtype == "hist_eq":
         assert np.allclose(improc_list, expected)

@@ -102,7 +102,6 @@ def cont_function(username, first_frame, raw_filenames):
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
-    print(len(raw_filenames))
     if len(raw_filenames) == 0:
         raise KeyError("No images selected.")
     else:
@@ -355,8 +354,8 @@ def image_window(username):
     raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    proc_image_bytes = get_processed_image(username)
-    plot_im = Image.open(io.BytesIO(proc_image_bytes))
+    proc_images_bytes = get_processed_image(username)
+    plot_im = Image.open(io.BytesIO(proc_images_bytes[-1]))
     photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
@@ -379,7 +378,7 @@ def image_window(username):
     # display processed histogram
     fig_proc = Figure(figsize=(5, 4), dpi=100)
     ax_proc = fig_proc.add_subplot(111)
-    proc_im = imread(io.BytesIO(proc_image_bytes))
+    proc_im = imread(io.BytesIO(proc_images_bytes[-1]))
     img_proc = np.asarray(proc_im.astype('uint8'))
     canvas_proc = display_histogram(fig_proc, ax_proc, img_proc,
                                     image_win, 'Processed')
