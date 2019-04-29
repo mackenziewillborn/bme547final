@@ -157,8 +157,8 @@ def test_log_compression():
                      [0, 0, 0, 255],
                      [0, 0, 0, 255]])])
 def test_image_processing(processingtype, expected):
-    from server_github import image_processing
-    from testing_info import img
+    from im_process_server import image_processing
+    from testing_strings import img
 
     improc = image_processing(img, processingtype)
     improc_list = improc[0:4, 1, 0:4]
