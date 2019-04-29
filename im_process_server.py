@@ -3,6 +3,7 @@ import io
 from imageio import imread, imwrite
 from PIL import ImageTk, Image
 import numpy as np
+import logging
 
 from skimage import data, img_as_float
 from skimage import exposure
@@ -27,6 +28,12 @@ app.config['MONGO_URI'] = "mongodb+srv://mlw60:Wm347609@bme547-r5nv9." \
 
 mongo = PyMongo(app)
 
+Error = {
+        1: {"message": "Please enter a username in the designated entry bar."},
+            }
+
+logging.basicConfig(filename="Main.log", filemode="w", level=logging.INFO)
+
 
 @app.route("/", methods=["GET"])
 def server_on():
@@ -49,7 +56,12 @@ def user_name():
     r = request.get_json()
     user_name = r["user_name"]
     time = upload_time()
-    add_user_name(user_name, time)
+
+    try:
+        add_user_name(user_name, time)
+    except errors.ValidationError:
+        logging.warning(Error[1])
+        return jsonify(Error[1]), 500
     return "Added user name!"
 
 

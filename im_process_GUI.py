@@ -60,7 +60,9 @@ def first_screen():
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
-                        command=lambda: cont_function(username, first_frame))
+                        command=lambda: cont_function(username,
+                                                      first_frame,
+                                                      raw_filenames))
     ok_btn.grid(column=1, row=3)
 
     root.mainloop()  # shows window
@@ -86,7 +88,7 @@ def browse_function(first_frame):
     file_label.grid(column=0, row=3)
 
 
-def cont_function(username, first_frame):
+def cont_function(username, first_frame, raw_filenames):
     """Posts username information to the server and proceeds
     to the next page of the GUI
 
@@ -100,6 +102,18 @@ def cont_function(username, first_frame):
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
+    print(len(raw_filenames))
+    if len(raw_filenames) == 0:
+        raise KeyError("No images selected.")
+    else:
+        for i in raw_filenames:
+            if (i.lower().endswith("jpeg") is False) \
+                    and (i.lower().endswith("jpg") is False) \
+                    and (i.lower().endswith("tiff") is False) \
+                    and (i.lower().endswith("tif") is False) \
+                    and (i.lower().endswith("png") is False):
+                raise TypeError("Images are not the right file type.")
+
     second_screen(username, first_frame)
     pass
 
