@@ -174,12 +174,13 @@ def second_screen(username, first_frame):
 
 
 def process_image(username, process_method, second_frame):
-    """Converts image to b64 string, parses the processing
+    """Converts images to b64 string, parses the processing
     type variable, and sends information to server
-    The process_image function first encodes the raw image and
-    turns it into a b64 string. It then reads in the IntVar that
-    was specifies previously by the user to determine which processing
-    type the user chose. It finally send the username, raw b64 string,
+
+    The process_image function first encodes the raw images and
+    turns them into a b64 strings. It then reads in the IntVar that
+    was specified previously by the user to determine which processing
+    type the user chose. It finally sends the username, raw b64 strings,
     and specified processing type to the server and calls the third
     screen function to proceed to the next screen in the GUI.
 
@@ -219,6 +220,30 @@ def process_image(username, process_method, second_frame):
 
 
 def third_screen(username, second_frame):
+    """The third screen in the GUI
+
+    This function first calls the get time metadata function
+    and displays the time uploaded, time to process, and image
+    size for the last picture in the raw_filenames list. It has
+    a button to click to display the raw and processed images
+    side by side and also has a button to click to display the
+    raw vs. processed histograms with red, green, and blue
+    plots. It gives the user the option to download the
+    processed images in the form of TIFF, JPEG, and PNG. Finally,
+    it gives the user the option to return to the first screen
+    in the GUI, finish and exit out of the interface, or to choose
+    another processing method for the same images.
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+            each unique user
+        second_frame (tkinter.Frame): frame of the second screen that is
+            destroyed to move on to the third GUI screen
+
+    Returns:
+        tkinter.Frame: frame of the third screen that is
+            destroyed to move on to the next GUI screens
+    """
     second_frame.destroy()
     third_frame = Frame(root)
     third_frame.pack()
@@ -232,7 +257,7 @@ def third_screen(username, second_frame):
               format(process_time)).grid(column=0,
                                          row=1, columnspan=2, sticky=W)
 
-    im_size = cv2.imread(raw_filenames[0], cv2.IMREAD_UNCHANGED)
+    im_size = cv2.imread(raw_filenames[-1], cv2.IMREAD_UNCHANGED)
     height = im_size.shape[0]
     width = im_size.shape[1]
     ttk.Label(third_frame, text="Image Size: {} x {} pixels".
@@ -286,6 +311,12 @@ def third_screen(username, second_frame):
 
 
 def return_function(third_frame):
+    """Returns the user to the first GUI screen
+
+    Args:
+        third_frame (tkinter.Frame): frame of the third screen that is
+            destroyed to move on to the first screen again
+    """
     third_frame.destroy()
     first_screen()
 
@@ -309,8 +340,8 @@ def get_time_metadata(username):
 
 
 def get_processed_image(username):
-    """Gets the b64 string of the processed image from the server and
-    converts it to an image file
+    """Gets the b64 strings of the processed images from the server and
+    converts them to image files
 
     Args:
         username (tkinter.StringVar): user-specified username to identify
@@ -331,6 +362,20 @@ def get_processed_image(username):
 
 
 def display_histogram(fig, ax, img, image_win, img_type):
+    """Creates and displays a histogram of pixel intensity
+
+    Args:
+        fig (tkinter.Figure): the main figure window
+        ax (tkinter.Figure): the subplot of the histogram
+        img (image): the image off which the histogram is based
+        image_win (tkinter.Frame): the window in which the images are
+            displayed
+        img_type (str): either 'Raw' or 'Processed'
+
+    Returns:
+        tkinter.Canvas: native tkinter canvas variable
+
+    """
     from matplotlib.backends.backend_tkagg import \
         FigureCanvasTkAgg
     from matplotlib import pyplot as plt
@@ -384,6 +429,18 @@ def image_window(username):
 
 
 def hist_window(username):
+    """Displays the raw image and processed image histograms side by side
+    for comparison
+
+    This function creates a new window to display the histograms of the raw
+    and processed images. It uses the raw filepath to display the raw image
+    histogram, and calls the get_processed_image function in order to
+    display the processed image histogram.
+
+    Args:
+        username (tkinter.StringVar): user-specified username to identify
+        each unique user
+    """
     from matplotlib.figure import Figure
     hist_win = Toplevel(root)
     proc_images_bytes = get_processed_image(username)
