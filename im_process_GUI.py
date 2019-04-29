@@ -33,10 +33,6 @@ def init_mongo_db():
             "mongodb.net/test?retryWrites=true")
 
 
-def server_on():
-    r = requests.get(URL+"/")
-
-
 def first_screen():
     """The first screen of the GUI
 
@@ -230,7 +226,7 @@ def third_screen(username, second_frame):
                                           columnspan=2, sticky=W)
 
     display_btn = ttk.Button(third_frame,
-                             text='Raw vs. Processed Images',
+                             text='View Raw vs. Processed Images',
                              command=lambda: image_window(username))
     display_btn.grid(column=0, row=3)
 
@@ -318,8 +314,14 @@ def image_window(username):
         each unique user
 
     """
-    image_win = Toplevel(root)
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_tkagg import \
+        FigureCanvasTkAgg
+    from matplotlib import pyplot as plt
 
+    image_win = Toplevel(root)
+    # w = Scrollbar(image_win)
+    # w.pack()
     raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
@@ -336,6 +338,23 @@ def image_window(username):
     panel2.grid(row=0, column=1)
     panel1 = Label(image_win, text="Processed Image")
     panel1.grid(row=1, column=1)
+
+    # display histogram
+    fig = Figure(figsize=(5, 4), dpi=100)
+    ax = fig.add_subplot(111)
+    img = cv2.imread(raw_filenames[0])
+    color = ('b', 'g', 'r')
+    for i, col in enumerate(color):
+        histr = cv2.calcHist([img], [i], None, [256], [0, 256])
+        ax.plot(histr, color=col)
+        plt.xlim([0, 256])
+    ax.set_xlabel('Intensity')
+    ax.set_ylabel('Number of Pixels')
+    ax.set_title('Raw Image Histogram')
+
+    canvas = FigureCanvasTkAgg(fig, master=image_win)  # A tk.DrawingArea.
+    # canvas.draw()
+    canvas.get_tk_widget().grid(row=2, column=0)
     root.mainloop()
 
 
@@ -350,7 +369,7 @@ def download_function(username, image_format, third_frame):
 
     Args:
         username (tkinter.StringVar): user-specified username to identify
-        each unique user
+            each unique user
         image_format(tkinter.StringVar): one of three options for the image
             filetype that will be downloaded, which are either JPEG, PNG,
             or TIFF
@@ -377,12 +396,6 @@ def download_function(username, image_format, third_frame):
 
 def finish_function(third_frame):
     third_frame.destroy()
-    # finish_frame = Frame(root)
-    # finish_frame.pack()
-    # finish_label = ttk.Label(finish_frame,
-    #                          text='All images downloaded successfully!',
-    #                          font=("Helvetica", 25))
-    # finish_label.grid(column=0, row=0, padx=20, pady=20)
 
 
 def reprocess_function(username, third_frame):
