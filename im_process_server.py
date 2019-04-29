@@ -45,11 +45,9 @@ def server_on():
 @app.route("/user_name", methods=["POST"])
 def user_name():
     """Saves the username and time uploaded to MongoDB
-
     Receives a dictionary containing the user's
     username, and calls upload_time and add_user_name
     to save the user's information to the database
-
     Returns:
         str: reports that it added the username
     """
@@ -67,7 +65,6 @@ def user_name():
 
 def upload_time():
     """Finds and saves the current timestamp
-
     Returns:
         time (datetime string): current time
     """
@@ -77,7 +74,6 @@ def upload_time():
 
 def add_user_name(user_name_arg, time):
     """Saves the username and time uploaded to MongoDB database
-
     Args:
         user_name_arg (string): user-specified username to identify
             each unique user
@@ -112,7 +108,6 @@ def processing_type():
 def add_processing_type(user_name_arg, processing_type_arg):
     """Saves the processing type to MongoDB database under the
     corresponding username
-
     Args:
         user_name_arg (str): user-specified username to identify
             each unique user
@@ -127,7 +122,6 @@ def add_processing_type(user_name_arg, processing_type_arg):
 def add_raw_image(user_name_arg, raw_b64_strings):
     """Saves the raw image(s) in the form of b64 string(s)
     to MongoDB database under the corresponding username
-
     Args:
         user_name_arg (str): user-specified username to identify
             each unique user
@@ -174,10 +168,8 @@ def image_processing(imgs_io, processing_type):
 
 def hist_equalization(img):
     """Performs histogram equalization processing on raw image
-
     Args:
         img (np array): raw image in the form of a np array
-
     Returns:
         np array: image array after having histogram equalization
             performed
@@ -188,10 +180,8 @@ def hist_equalization(img):
 
 def contrast_stretching(img):
     """Performs contrast stretching processing on raw image
-
     Args:
         img (np array): raw image in the form of a np array
-
     Returns:
         np array: image array after having contrast stretching
             performed
@@ -203,10 +193,8 @@ def contrast_stretching(img):
 
 def log_compression(img):
     """Performs log compression processing on raw image
-
     Args:
         img (np array): raw image in the form of a np array
-
     Returns:
         np array: image array after having log compression
             performed
@@ -217,10 +205,8 @@ def log_compression(img):
 
 def reverse_video(img):
     """Performs reverse video processing on raw image
-
     Args:
         img (np array): raw image in the form of a np array
-
     Returns:
         np array: image array after having log compression
             performed
@@ -247,7 +233,6 @@ def processed_image(user_name, img_procs):
 def add_proc_image(user_name_arg, proc_b64_strings):
     """Saves the processed image(s) in the form of b64 string(s)
     to MongoDB database under the corresponding username
-
     Args:
         user_name_arg (str): user-specified username to identify
             each unique user
@@ -264,7 +249,6 @@ def add_time_to_process(time_to_process_arg, user_name_arg):
     """Saves the amount of elapsed time the server took to
     process the image(s) to MongoDB database under the corresponding
     username
-
     Args:
         user_name_arg (str): user-specified username to identify
             each unique user
@@ -280,11 +264,9 @@ def add_time_to_process(time_to_process_arg, user_name_arg):
 def get_time_stamp(username):
     """Gets the time uploaded and processing time from the
     database
-
     Args:
         username (str): user-specified username to identify
             each unique user
-
     Returns:
         dict: a dict of time uploaded and process time
     """
@@ -298,11 +280,9 @@ def get_time_stamp(username):
 @app.route("/processed_image/<username>", methods=["GET"])
 def get_proc_image(username):
     """Gets the processed image b64 string from the database
-
     Args:
         username (str): user-specified username to identify
             each unique user
-
     Returns:
         dict: a dict of the processed image in the form of a b64 string
     """
