@@ -137,8 +137,8 @@ def test_log_compression():
                 [255, 255, 255, 0]]
 
     assert np.all(log_comp_list == np.array(expected))
-        
- 
+
+
 @pytest.mark.parametrize("processingtype, expected", [
     ("hist_eq", [[1., 1., 1., 0.18446181],
                  [1., 1., 1., 0.18446181],
