@@ -292,14 +292,15 @@ def get_processed_image(username):
         JpegImageFile: the image file of the processed image
 
     """
-    global proc_b64_string
+    proc_images_bytes = []
 
     r = requests.get(URL+'/processed_image/'+username.get())
     r_json = r.json()
     proc_b64_strings = r_json['processed_images']
     for i in range(len(proc_b64_strings)):
         proc_image_bytes = base64.b64decode(proc_b64_strings[i])
-    return proc_image_bytes
+        proc_images_bytes.append(proc_image_bytes)
+    return proc_images_bytes
 
 
 def display_histogram(fig, ax, img, image_win, img_type):
@@ -392,16 +393,17 @@ def download_function(username, image_format, third_frame):
 
     """
     import matplotlib.pyplot as plt
-    global proc_b64_string
-    proc_image_bytes = get_processed_image(username)
-    proc_im = imread(io.BytesIO(proc_image_bytes))
 
-    if image_format.get() == 'JPEG':
-        plt.imsave('processed.jpg', proc_im)
-    elif image_format.get() == 'PNG':
-        plt.imsave('processed.png', proc_im)
-    elif image_format.get() == 'TIFF':
-        plt.imsave('processed.tiff', proc_im)
+    proc_images_bytes = get_processed_image(username)
+    for i in range(len(proc_images_bytes)):
+        proc_im = imread(io.BytesIO(proc_images_bytes[i]))
+
+        if image_format.get() == 'JPEG':
+            plt.imsave('processed_{}.jpg'.format(i), proc_im)
+        elif image_format.get() == 'PNG':
+            plt.imsave('processed_{}.png'.format(i), proc_im)
+        elif image_format.get() == 'TIFF':
+            plt.imsave('processed_{}.tiff'.format(i), proc_im)
 
     finish_label = ttk.Label(third_frame,
                              text='All images downloaded successfully!')

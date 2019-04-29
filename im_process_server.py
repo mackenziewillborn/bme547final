@@ -156,7 +156,7 @@ def image_processing(imgs_io, processing_type):
         # else:
         #     img_proc = hist_equalization(img)
         img_procs.append(img_proc)
-        plt.imsave('proc_test_{}.jpg'.format(i), img_proc) 
+        plt.imsave('proc_test_{}.jpg'.format(i), img_proc)
     return img_procs
 
 
