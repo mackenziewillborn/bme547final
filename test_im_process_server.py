@@ -77,7 +77,7 @@ def test_image_decode():
 
     decodedimg = image_decode(username, rawb64images)
 
-    assert np.allclose(decodedimg[0:4, 1, 1], [255, 255, 255, 255])
+    assert np.all(decodedimg[0:4, 1, 1] == [255, 255, 255, 255])
 
 
 def test_hist_equalization():
@@ -106,7 +106,7 @@ def test_contrast_stretching():
                 [255, 255, 255, 0],
                 [255, 255, 255, 0]]
 
-    assert np.allclose(con_stretch_list, np.array(expected))
+    assert np.all(con_stretch_list == np.array(expected))
 
 
 def test_reverse_video():
@@ -121,7 +121,7 @@ def test_reverse_video():
                 [0, 0, 0, 255],
                 [0, 0, 0, 255]]
 
-    assert np.allclose(rev_vid_list, np.array(expected))
+    assert np.all(rev_vid_list == np.array(expected))
 
 
 def test_log_compression():
@@ -136,4 +136,34 @@ def test_log_compression():
                 [255, 255, 255, 0],
                 [255, 255, 255, 0]]
 
-    assert np.allclose(log_comp_list, np.array(expected))
+    assert np.all(log_comp_list == np.array(expected))
+        
+ 
+@pytest.mark.parametrize("processingtype, expected", [
+    ("hist_eq", [[1., 1., 1., 0.18446181],
+                 [1., 1., 1., 0.18446181],
+                 [1., 1., 1., 0.18446181],
+                 [1., 1., 1., 0.18446181]]),
+    ("con_stretch", [[255, 255, 255, 0],
+                     [255, 255, 255, 0],
+                     [255, 255, 255, 0],
+                     [255, 255, 255, 0]]),
+    ("log_comp", [[255, 255, 255, 0],
+                  [255, 255, 255, 0],
+                  [255, 255, 255, 0],
+                  [255, 255, 255, 0]]),
+    ("reverse_vid", [[0, 0, 0, 255],
+                     [0, 0, 0, 255],
+                     [0, 0, 0, 255],
+                     [0, 0, 0, 255]])])
+def test_image_processing(processingtype, expected):
+    from server_github import image_processing
+    from testing_info import img
+
+    improc = image_processing(img, processingtype)
+    improc_list = improc[0:4, 1, 0:4]
+
+    if processingtype == "hist_eq":
+        assert np.allclose(improc_list, expected)
+    else:
+        assert np.all(improc_list == expected)
