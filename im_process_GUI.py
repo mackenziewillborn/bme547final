@@ -57,7 +57,9 @@ def first_screen():
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
-                        command=lambda: cont_function(username, first_frame, raw_filenames))
+                        command=lambda: cont_function(username, 
+                                                      first_frame, 
+                                                      raw_filenames))
     ok_btn.grid(column=1, row=3)
 
     root.mainloop()  # shows window
@@ -94,7 +96,7 @@ def cont_function(username, first_frame, raw_filenames):
                 }
     requests.post(URL+'/user_name', json=new_user)
     print(len(raw_filenames))
-    if len(raw_filenames) == 0: # or raw_filenames not in globals():
+    if len(raw_filenames) == 0:
         raise KeyError("No images selected.")
     else:
         for i in raw_filenames:
