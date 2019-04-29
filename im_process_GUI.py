@@ -10,7 +10,6 @@ import cv2
 import numpy as np
 import io
 from imageio import imread, imwrite
-import zipfile
 import matplotlib
 matplotlib.use('TkAgg')
 
@@ -59,7 +58,9 @@ def first_screen():
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
-                        command=lambda: cont_function(username, first_frame))
+                        command=lambda: cont_function(username,
+                                                      first_frame,
+                                                      raw_filenames))
     ok_btn.grid(column=1, row=3)
 
     root.mainloop()  # shows window
@@ -71,25 +72,25 @@ def browse_function(first_frame):
 
     Allows the user to upload their raw image(s) to which they would
     like to perform image processing. The user can choose a single image,
-    multiple images, or a zip file of images to upload.
+    multiple images, or a zip file of images to upload. It then updates
+    the window to display the number of images uploaded for processing.
+
+    Args:
+        first_frame (tkinter.Frame): frame of the first screen that is
+            destroyed to move on to the second screen
     """
     global raw_filenames
     root.filename = \
-        filedialog.askopenfilenames(initialdir="/", title="Select Image")
-    first_file = root.filename[0]
-    if first_file.lower().endswith('zip') is True:
-        zf = zipfile.ZipFile(root.filename[0], 'r')
-        raw_filenames = zf.namelist()
-        num_files = len(raw_filenames)
-    else:
-        raw_filenames = root.filename
-        num_files = len(raw_filenames)
+        filedialog.askopenfilenames(initialdir="/", title="Select Image"
+                                    )
+    raw_filenames = root.filename
+    num_files = len(raw_filenames)
     file_label = ttk.Label(first_frame,
                            text="{} file(s) uploaded".format(num_files))
     file_label.grid(column=0, row=3)
 
 
-def cont_function(username, first_frame):
+def cont_function(username, first_frame, raw_filenames):
     """Posts username information to the server and proceeds
     to the next page of the GUI
 
@@ -98,10 +99,24 @@ def cont_function(username, first_frame):
             each unique user
         first_frame (tkinter.Frame): frame of the first screen that is
             destroyed to move on to the second screen
+        raw_filenames (tuple): all of the raw filenames of the uploaded
+            images
     """
     new_user = {"user_name": username.get()
                 }
     requests.post(URL+'/user_name', json=new_user)
+
+    if len(raw_filenames) == 0:
+        raise KeyError("No images selected.")
+    else:
+        for i in raw_filenames:
+            if (i.lower().endswith("jpeg") is False) \
+                    and (i.lower().endswith("jpg") is False) \
+                    and (i.lower().endswith("tiff") is False) \
+                    and (i.lower().endswith("tif") is False) \
+                    and (i.lower().endswith("png") is False):
+                raise TypeError("Images are not the right file type.")
+
     second_screen(username, first_frame)
     pass
 
@@ -161,7 +176,6 @@ def second_screen(username, first_frame):
 def process_image(username, process_method, second_frame):
     """Converts image to b64 string, parses the processing
     type variable, and sends information to server
-
     The process_image function first encodes the raw image and
     turns it into a b64 string. It then reads in the IntVar that
     was specifies previously by the user to determine which processing
@@ -305,13 +319,15 @@ def get_processed_image(username):
     Returns:
         JpegImageFile: the image file of the processed image
     """
-    global proc_b64_string
+    proc_images_bytes = []
 
     r = requests.get(URL+'/processed_image/'+username.get())
     r_json = r.json()
-    proc_b64_string = r_json['processed_image']
-    proc_image_bytes = base64.b64decode(proc_b64_string)
-    return proc_image_bytes
+    proc_b64_strings = r_json['processed_images']
+    for i in range(len(proc_b64_strings)):
+        proc_image_bytes = base64.b64decode(proc_b64_strings[i])
+        proc_images_bytes.append(proc_image_bytes)
+    return proc_images_bytes
 
 
 def display_histogram(fig, ax, img, image_win, img_type):
@@ -350,8 +366,8 @@ def image_window(username):
     raw_open = Image.open(raw_filenames[-1])
     raw_image = ImageTk.PhotoImage(raw_open)
 
-    proc_image_bytes = get_processed_image(username)
-    plot_im = Image.open(io.BytesIO(proc_image_bytes))
+    proc_images_bytes = get_processed_image(username)
+    plot_im = Image.open(io.BytesIO(proc_images_bytes[-1]))
     photoimg = ImageTk.PhotoImage(plot_im)
 
     panel1 = Label(image_win, image=raw_image)
@@ -382,7 +398,7 @@ def hist_window(username):
     # display processed histogram
     fig_proc = Figure(figsize=(6, 5), dpi=100)
     ax_proc = fig_proc.add_subplot(111)
-    proc_im = imread(io.BytesIO(proc_image_bytes))
+    proc_im = imread(io.BytesIO(proc_images_bytes[-1]))
     img_proc = np.asarray(proc_im.astype('uint8'))
     canvas_proc = display_histogram(fig_proc, ax_proc, img_proc,
                                     hist_win, 'Processed')
@@ -391,7 +407,6 @@ def hist_window(username):
 
 def download_function(username, image_format, third_frame):
     """Downloads the image(s) to the user's repository
-
     This function calls the get_processed_image function
     and creates a numpy array as an argument for the
     cv2.imwrite command, which saves the image as the specified
@@ -408,6 +423,7 @@ def download_function(username, image_format, third_frame):
             destroyed to move on to the download GUI screen
     """
     import matplotlib.pyplot as plt
+
     proc_images_bytes = get_processed_image(username)
     for i in range(len(proc_images_bytes)):
         proc_im = imread(io.BytesIO(proc_images_bytes[i]))
@@ -438,7 +454,6 @@ def finish_function(third_frame):
 
 def reprocess_function(username, third_frame):
     """Allows users to apply a new processing type to the same image(s)
-
     This function first destroys the third frame to display a new
     screen of the GUI. It allows the user to select another image
     processing step that is then applied to the same photos that
