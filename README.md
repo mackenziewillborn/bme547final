@@ -13,17 +13,19 @@ Enter the repository with the im_process_server.py code, and run ‘python3 im_p
 ### Our VCM
 [link] vcm
 
+
 By running the im_process_GUI.py program, you can enter your username and raw files you would like to be processed. You can then pick your preffered processing type. After posting this information to the database, our program will return to you the time uploaded, total processing time, image size, histogram data, and give you the option to see your images. In the case that you upload a group of pictures, the last photo's information will be displayed back to the user after all of the information is collected and stored. 
 
 A video demonstration of how to use our Image Processing Server can be found at the link below:
 
 
 ### Our Video Demo 
-[link] video demo
+Video 1: 
+https://www.youtube.com/watch?v=7QLEyzB_IaU&list=UUxdHCy01O9jHalYY56hoMuA&index=4
 
+Video 2:
+https://www.youtube.com/watch?v=RRjM5IxGH3c&list=UUxdHCy01O9jHalYY56hoMuA&index=3 
 
-Future Work: 
-In the future, we would take this server farther by adding zip file opener functionality. This would allow the user to upload an entire zip archive of photos under their name, and get all of the images filtered at once.
 
 ### GUI Instructions
 The first screen of the GUI asks for the user to input a username, which will act as their user ID in the image processing database. The user should then click on the "upload raw image(s)" button, which will open up a dialog box allowing them to choose image files from their local computer to upload. Users can upload multiple images or choose only one. Once they close out of this file dialog box, the GUI will display "X files uploaded" with X being the number of files they chose. The user should then click the "Continue" button to move on to the next screen.
