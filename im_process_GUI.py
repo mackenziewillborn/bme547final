@@ -57,8 +57,8 @@ def first_screen():
     browse_btn.grid(column=0, row=2)
 
     ok_btn = ttk.Button(first_frame, text='Continue',
-                        command=lambda: cont_function(username, 
-                                                      first_frame, 
+                        command=lambda: cont_function(username,
+                                                      first_frame,
                                                       raw_filenames))
     ok_btn.grid(column=1, row=3)
 
