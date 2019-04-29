@@ -1,7 +1,4 @@
 import base64
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import io
 from imageio import imread, imwrite
 from PIL import ImageTk, Image
@@ -16,6 +13,8 @@ from flask import Flask, request, jsonify, abort
 from my_class import User
 from pymodm import connect
 import datetime
+import matplotlib
+matplotlib.use('TkAgg')
 
 app = Flask(__name__)
 
@@ -81,6 +80,8 @@ def add_processing_type(user_name_arg, processing_type_arg):
 
 
 def image_decode(user_name_arg, raw_b64_strings):
+    import matplotlib.pyplot as plt
+
     for i in range(len(raw_b64_strings)):
         image_bytes = base64.b64decode(raw_b64_strings[i])
         img_io = imread(io.BytesIO(image_bytes))
@@ -95,6 +96,8 @@ def add_raw_image(user_name_arg, raw_b64_strings):
 
 
 def image_processing(img_io, processing_type):
+    import matplotlib.pyplot as plt
+
     img = np.asarray(img_io.astype('uint8'))
     if processing_type == 'hist_eq':
         img_proc = hist_equalization(img)
@@ -132,14 +135,12 @@ def reverse_video(img):
 
 
 def processed_image(user_name, img_proc):
-    # proc_img_bytes = img_proc.tobytes()
-    # proc_b64_bytes = base64.b64encode(proc_img_bytes)
     pil_img = Image.fromarray(img_proc.astype('uint8'))
+    pil_img_RGB = pil_img.convert('RGB')
     buff = io.BytesIO()
-    pil_img.save(buff, format="JPEG")
+    pil_img_RGB.save(buff, format="JPEG")
     proc_b64_string = base64.b64encode(buff.getvalue()).decode("utf-8")
 
-    # proc_b64_string = str(proc_b64_bytes, encoding='utf-8')
     add_proc_image(user_name, proc_b64_string)
     return proc_b64_string
 
