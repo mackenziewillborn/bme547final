@@ -296,8 +296,9 @@ def get_processed_image(username):
 
     r = requests.get(URL+'/processed_image/'+username.get())
     r_json = r.json()
-    proc_b64_string = r_json['processed_image']
-    proc_image_bytes = base64.b64decode(proc_b64_string)
+    proc_b64_strings = r_json['processed_images']
+    for i in range(len(proc_b64_strings)):
+        proc_image_bytes = base64.b64decode(proc_b64_strings[i])
     return proc_image_bytes
 
 
