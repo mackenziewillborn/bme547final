@@ -370,7 +370,7 @@ def image_window(username):
 def hist_window(username):
     from matplotlib.figure import Figure
     hist_win = Toplevel(root)
-    proc_image_bytes = get_processed_image(username)
+    proc_images_bytes = get_processed_image(username)
 
     # display raw histogram
     fig_raw = Figure(figsize=(6, 5), dpi=100)
@@ -408,18 +408,18 @@ def download_function(username, image_format, third_frame):
             destroyed to move on to the download GUI screen
     """
     import matplotlib.pyplot as plt
-    global proc_b64_string
-    proc_image_bytes = get_processed_image(username)
-    proc_im = imread(io.BytesIO(proc_image_bytes))
+    proc_images_bytes = get_processed_image(username)
+    for i in range(len(proc_images_bytes)):
+        proc_im = imread(io.BytesIO(proc_images_bytes[i]))
 
-    if image_format.get() == 'JPEG':
-        plt.imsave('processed.jpg', proc_im)
-    elif image_format.get() == 'PNG':
-        plt.imsave('processed.png', proc_im)
-    elif image_format.get() == 'TIFF':
-        plt.imsave('processed.tiff', proc_im)
-    else:
-        plt.imsave('processed.jpg', proc_im)
+        if image_format.get() == 'JPEG':
+            plt.imsave('processed_{}.jpg'.format(i), proc_im)
+        elif image_format.get() == 'PNG':
+            plt.imsave('processed_{}.png'.format(i), proc_im)
+        elif image_format.get() == 'TIFF':
+            plt.imsave('processed_{}.tiff'.format(i), proc_im)
+        else:
+            plt.imsave('processed_{}.jpg'.format(i), proc_im)
 
     finish_label = ttk.Label(third_frame,
                              text='All images downloaded successfully!')
