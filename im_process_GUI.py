@@ -301,6 +301,24 @@ def get_processed_image(username):
     return proc_image_bytes
 
 
+def display_histogram(fig, ax, img, image_win, img_type):
+    from matplotlib.backends.backend_tkagg import \
+        FigureCanvasTkAgg
+    from matplotlib import pyplot as plt
+
+    color = ('b', 'g', 'r')
+    for i, col in enumerate(color):
+        histr = cv2.calcHist([img], [i], None, [256], [0, 256])
+        ax.plot(histr, color=col)
+        plt.xlim([0, 256])
+    ax.set_xlabel('Intensity')
+    ax.set_ylabel('Number of Pixels')
+    ax.set_title('{} Image Histogram'.format(img_type))
+
+    canvas = FigureCanvasTkAgg(fig, master=image_win)  # A tk.DrawingArea.
+    return canvas
+
+
 def image_window(username):
     """Displays the raw image and processed image side by side for
     comparison
@@ -315,10 +333,6 @@ def image_window(username):
 
     """
     from matplotlib.figure import Figure
-    from matplotlib.backends.backend_tkagg import \
-        FigureCanvasTkAgg
-    from matplotlib import pyplot as plt
-
     image_win = Toplevel(root)
     # w = Scrollbar(image_win)
     # w.pack()
@@ -339,22 +353,21 @@ def image_window(username):
     panel1 = Label(image_win, text="Processed Image")
     panel1.grid(row=1, column=1)
 
-    # display histogram
-    fig = Figure(figsize=(5, 4), dpi=100)
-    ax = fig.add_subplot(111)
-    img = cv2.imread(raw_filenames[0])
-    color = ('b', 'g', 'r')
-    for i, col in enumerate(color):
-        histr = cv2.calcHist([img], [i], None, [256], [0, 256])
-        ax.plot(histr, color=col)
-        plt.xlim([0, 256])
-    ax.set_xlabel('Intensity')
-    ax.set_ylabel('Number of Pixels')
-    ax.set_title('Raw Image Histogram')
+    # display raw histogram
+    fig_raw = Figure(figsize=(5, 4), dpi=100)
+    ax_raw = fig_raw.add_subplot(111)
+    img_raw = cv2.imread(raw_filenames[0])
+    canvas_raw = display_histogram(fig_raw, ax_raw, img_raw, image_win, 'Raw')
+    canvas_raw.get_tk_widget().grid(row=2, column=0)
 
-    canvas = FigureCanvasTkAgg(fig, master=image_win)  # A tk.DrawingArea.
-    # canvas.draw()
-    canvas.get_tk_widget().grid(row=2, column=0)
+    # display processed histogram
+    fig_proc = Figure(figsize=(5, 4), dpi=100)
+    ax_proc = fig_proc.add_subplot(111)
+    proc_im = imread(io.BytesIO(proc_image_bytes))
+    img_proc = np.asarray(proc_im.astype('uint8'))
+    canvas_proc = display_histogram(fig_proc, ax_proc, img_proc,
+                                    image_win, 'Processed')
+    canvas_proc.get_tk_widget().grid(row=2, column=1)
     root.mainloop()
 
 
