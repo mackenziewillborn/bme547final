@@ -3,6 +3,7 @@ import io
 from imageio import imread, imwrite
 from PIL import ImageTk, Image
 import numpy as np
+import logging
 
 from skimage import data, img_as_float
 from skimage import exposure
