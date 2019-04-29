@@ -4,15 +4,8 @@
 
 This repository hosts the code for our final project. We have created a database hosting user information, raw images, processed images, and image metadata. Using our user-friendly GUI, information is sent through the server to be posted on the database and retreived for use later on.
 
-Our server is deployed on the following virtual machine:
-
 ### Instructions on how to use the Image Processor
 Enter the repository with the im_process_server.py code, and run ‘python3 im_process_server.py’ from the command line. Next, the im_process_GUI.py code should be run using ‘python3 im_process_GUI.py’ from the command line of a different terminal. The server code MUST be run before the client code.
-
-
-### Our VCM
-[link] vcm
-
 
 By running the im_process_GUI.py program, you can enter your username and raw files you would like to be processed. You can then pick your preffered processing type. After posting this information to the database, our program will return to you the time uploaded, total processing time, image size, histogram data, and give you the option to see your images. In the case that you upload a group of pictures, the last photo's information will be displayed back to the user after all of the information is collected and stored. 
 
