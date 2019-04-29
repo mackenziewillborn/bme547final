@@ -226,7 +226,7 @@ def third_screen(username, second_frame):
                                           columnspan=2, sticky=W)
 
     display_btn = ttk.Button(third_frame,
-                             text='View Raw vs. Processed Images',
+                             text='View Raw/Processed Images and Histograms',
                              command=lambda: image_window(username))
     display_btn.grid(column=0, row=3)
 
@@ -383,11 +383,11 @@ def download_function(username, image_format, third_frame):
     Args:
         username (tkinter.StringVar): user-specified username to identify
             each unique user
-        image_format(tkinter.StringVar): one of three options for the image
+        image_format (tkinter.StringVar): one of three options for the image
             filetype that will be downloaded, which are either JPEG, PNG,
             or TIFF
-        third_frame: frame of the third screen that is destroyed
-            to move on to the download GUI screen
+        third_frame (tkinter.Frame): frame of the third screen that is
+            destroyed to move on to the download GUI screen
 
     """
     import matplotlib.pyplot as plt
@@ -408,6 +408,13 @@ def download_function(username, image_format, third_frame):
 
 
 def finish_function(third_frame):
+    """Exits out of the GUI completely
+
+    Args:
+        third_frame (tkinter.Frame): frame of the third screen that is
+            destroyed to move on to the download GUI screen
+
+    """
     third_frame.destroy()
 
 
