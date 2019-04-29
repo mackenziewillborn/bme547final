@@ -7,19 +7,20 @@ from tkinter import filedialog
 import requests
 from pymodm import connect
 import cv2
+import zipfile
 import numpy as np
 import io
 from imageio import imread, imwrite
 import matplotlib
-# matplotlib.use('TkAgg')
-matplotlib.use('Agg')
+matplotlib.use('TkAgg')
+# matplotlib.use('Agg')
 
 root = Tk()  # makes main window
 root.title("GUI Client")
 main_frame = Frame(root)
 main_frame.pack()
-# URL = "http://127.0.0.1:5000"
-URL = "http://vcm-9060.vm.duke.edu:5000"
+URL = "http://127.0.0.1:5000"
+# URL = "http://vcm-9060.vm.duke.edu:5000"
 
 
 def main():
@@ -486,16 +487,29 @@ def download_function(username, image_format, third_frame):
     proc_images_bytes = get_processed_image(username)
     for i in range(len(proc_images_bytes)):
         proc_im = imread(io.BytesIO(proc_images_bytes[i]))
-
-        if image_format.get() == 'JPEG':
-            plt.imsave('processed_{}.jpg'.format(i), proc_im)
-        elif image_format.get() == 'PNG':
-            plt.imsave('processed_{}.png'.format(i), proc_im)
-        elif image_format.get() == 'TIFF':
-            plt.imsave('processed_{}.tiff'.format(i), proc_im)
+        if i == 0:
+            if image_format.get() == 'JPEG':
+                plt.imsave('processed_{}.jpg'.format(i), proc_im)
+            elif image_format.get() == 'PNG':
+                plt.imsave('processed_{}.png'.format(i), proc_im)
+            elif image_format.get() == 'TIFF':
+                plt.imsave('processed_{}.tiff'.format(i), proc_im)
+            else:
+                plt.imsave('processed_{}.jpg'.format(i), proc_im)
         else:
-            plt.imsave('processed_{}.jpg'.format(i), proc_im)
-
+            zf = zipfile.ZipFile('zipfile_write.zip', mode='w')
+            if image_format.get() == 'JPEG':
+                plt.imsave('processed_{}.jpg'.format(i), proc_im)
+                zf.write('processed_{}.jpg'.format(i))
+            elif image_format.get() == 'PNG':
+                plt.imsave('processed_{}.png'.format(i), proc_im)
+                zf.write('processed_{}.png'.format(i))
+            elif image_format.get() == 'TIFF':
+                plt.imsave('processed_{}.tiff'.format(i), proc_im)
+                zf.write('processed_{}.tiff'.format(i))
+            else:
+                plt.imsave('processed_{}.jpg'.format(i), proc_im)
+                zf.write('processed_{}.jpg'.format(i))
     finish_label = ttk.Label(third_frame,
                              text='All images downloaded successfully!')
     finish_label.grid(column=3, row=5)
